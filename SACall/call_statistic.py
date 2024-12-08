@@ -15,8 +15,11 @@ for size, group in grouped_data:
     # Tworzymy wykresy dla CPU, GPU i Power AVG
     plt.plot(group['time'], group['cpu1'], label=f'CPU1 - {size} MB', marker='o')
     plt.plot(group['time'], group['cpu2'], label=f'CPU2 - {size} MB', marker='o')
+    plt.plot(group['time'], group['cpu3'], label=f'CPU3 - {size} MB', marker='o')
+    plt.plot(group['time'], group['cpu4'], label=f'CPU4 - {size} MB', marker='o')
     plt.plot(group['time'], group['gpu'], label=f'GPU - {size} MB', marker='o')
-    plt.plot(group['time'], group['power_avg'], label=f'Power Avg - {size} MB', marker='x')
+    # plt.plot(group['time'], group['ram'], label=f'RAM - {size} MB', marker='o')
+    # plt.plot(group['time'], group['power_avg'], label=f'Power Avg - {size} MB', marker='x')
 
 # Dodanie etykiet, tytułów i legendy
 plt.xlabel('Time (s)')

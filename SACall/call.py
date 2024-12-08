@@ -26,6 +26,7 @@ import psutil
 from jtop import jtop
 import csv
 from datetime import datetime
+import threading
 
 read_id_list, log_probs_list, output_lengths_list, row_num_list = [], [], [], []
 encode_mutex = True
@@ -172,7 +173,7 @@ def decode_process(outpath, encode_mutex, decode_mutex, write_mutex):
     decode_read_id_list = read_id_list
     decode_row_num_list = row_num_list
     encode_mutex.value = 1
-    decoder = BeamCTCDecoder('-ATCG ', blank_index=0, alpha=0.0, lm_path=None, beta=0.0, cutoff_top_n=0,
+    decoder = BeamCTCDecoder('-ATCG ', blank_index=0, alpha=0.0, lm_path=None, beta=0.0, cutoff_top_n=6,
                              cutoff_prob=1.0, beam_width=3, num_processes=8)
     decoded_output, offsets = decoder.decode(probs, lengths)
     idx = 0
@@ -218,6 +219,26 @@ def save_metrics_to_csv(filepath, metrics):
         for metric in metrics:
             writer.writerow(metric)
 
+def monitor_metrics(stop_event, start_time, file_size, metrics_list, filepath, jetson):
+    """Monitor system metrics every ... seconds and save to the list."""
+    while not stop_event.is_set():
+        stats = jetson.stats
+        metrics = {
+            'file_size': file_size,
+            'time': time.time() - start_time,
+            'ram': psutil.virtual_memory().used / (1024 ** 2),
+            'gpu': stats['GPU1'],
+            'cpu1': stats['CPU1'],
+            'cpu2': stats['CPU2'],
+            'cpu3': stats['CPU3'],
+            'cpu4': stats['CPU4'],
+            'temperature_cpu': stats['Temp CPU'],
+            'temperature_gpu': stats['Temp GPU'],
+            'power_avg': stats['power avg'],
+        }
+        metrics_list.append(metrics)
+        time.sleep(5)
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-model', required=True)
@@ -245,22 +266,33 @@ def main():
     device = torch.device('cuda' if argv.cuda else 'cpu')
     argv.device = device
 
+    metric_file = os.path.join('./', 'jetson_metrics.csv')
+
     # Monitor RAM usage
     ram_usage_before = psutil.virtual_memory().used / (1024 ** 2) 
 
     # Monitor GPU and system metrics
     with jtop() as jetson:
         system_metrics = []
+        stop_event = threading.Event()
 
+        monitoring_thread = threading.Thread(target=monitor_metrics, args=(stop_event, start_time, records_size_mb, system_metrics, metric_file, jetson))
+        monitoring_thread.start()
+        
         # Start processing
-        call_model = Call(argv).to(device)
-        encode(call_model, argv)
+        try:
+            call_model = Call(argv).to(device)
+            encode(call_model, argv)
+        finally:
+            # Stop monitoring
+            stop_event.set()
+            monitoring_thread.join()
 
         print("Collect Jetson system metrics...")
         
         # Monitor RAM and GPU usage after
-        ram_usage_after = psutil.virtual_memory().used / (1024 ** 2)
-        ram_usage = ram_usage_after - ram_usage_before
+        #ram_usage_after = psutil.virtual_memory().used / (1024 ** 2)
+        #ram_usage = ram_usage_after - ram_usage_before
 
         # Resource usage summary
         #print(f"RAM usage before: {ram_usage_before:.2f} MB, after: {ram_usage_after:.2f} MB")
@@ -271,29 +303,30 @@ def main():
 
         # Execution time
         execution_time = end_time - start_time
-        #print(f"Execution time: {execution_time:.2f} sekund")
+        print(f"Execution time: {execution_time:.2f} sekund")
             
-        stats = jetson.stats
-        system_metrics.append({
-            'file_size': records_size_mb,
-            'time': execution_time,
-            'ram': ram_usage,
-            'gpu': stats['GPU1'],
-            'cpu1': stats['CPU1'],
-            'cpu2': stats['CPU2'],
-            'cpu3': stats['CPU3'],
-            'cpu4': stats['CPU4'],
-            'temperature_cpu': stats['Temp CPU'],
-            'temperature_gpu': stats['Temp GPU'],
-            'power_avg': stats['power avg'],
-        })
+        # stats = jetson.stats
+        # system_metrics.append({
+        #     'file_size': records_size_mb,
+        #     'time': execution_time,
+        #     'ram': ram_usage,
+        #     'gpu': stats['GPU1'],
+        #     'cpu1': stats['CPU1'],
+        #     'cpu2': stats['CPU2'],
+        #     'cpu3': stats['CPU3'],
+        #     'cpu4': stats['CPU4'],
+        #     'temperature_cpu': stats['Temp CPU'],
+        #     'temperature_gpu': stats['Temp GPU'],
+        #     'power_avg': stats['power avg'],
+        # })
 
-    metric_file = os.path.join('./', 'jetson_metrics.csv')
-    save_metrics_to_csv(metric_file, system_metrics)
+        print(f"Metrics length: {len(system_metrics)}")
+        # Save collected metrics to CSV
+        save_metrics_to_csv(metric_file, system_metrics)
 
     # Save or display system metrics
-    for metric in system_metrics:
-        print(metric)  # Replace with saving to a file if needed
+ #   for metric in system_metrics:
+ #       print(metric)  # Replace with saving to a file if needed
 
 
 if __name__ == "__main__":
