@@ -1,7 +1,7 @@
 # Base image JetPack 6.1
 FROM nvcr.io/nvidia/l4t-base:r36.2.0
 
-# Ustawienia środowiskowe
+# Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive \
     PATH="/usr/local/cuda/bin:${PATH}" \
     LD_LIBRARY_PATH="/usr/local/cuda/lib64:${LD_LIBRARY_PATH}"
@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libcudnn8 \
     libcudnn8-dev
 
-# Install python libs
+# Install neccesary apt packages
 RUN python3 -m pip install --upgrade pip && \
     pip3 install --no-cache-dir \
         filelock==3.13.1 \
