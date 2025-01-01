@@ -74,3 +74,6 @@ RUN git clone --recursive https://github.com/Drigix/jetson-basecalling.git && \
 
 # Set the PYTHONPATH environment variable
 ENV PYTHONPATH=${PYTHONPATH}:/jetson-basecalling/CATCaller/ctc:/jetson-basecalling/CATCaller/train
+
+# Add a simple command to keep the container alive
+CMD ["tail", "-f", "/dev/null"]

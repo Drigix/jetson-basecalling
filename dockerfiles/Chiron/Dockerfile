@@ -62,3 +62,6 @@ RUN rm -rf h5py-3.1.0-cp36-cp36m-linux_aarch64.whl && \
 
 # Download example data and basecaller
 RUN git clone --recursive https://github.com/Drigix/jetson-basecalling.git 
+
+# Add a simple command to keep the container alive
+CMD ["tail", "-f", "/dev/null"]

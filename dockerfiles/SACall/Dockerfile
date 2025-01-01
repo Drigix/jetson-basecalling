@@ -66,3 +66,6 @@ RUN git clone --recursive https://github.com/parlance/ctcdecode.git && \
 
 # Download example data and basecaller
 RUN git clone --recursive https://github.com/Drigix/jetson-basecalling.git 
+
+# Add a simple command to keep the container alive
+CMD ["tail", "-f", "/dev/null"]
