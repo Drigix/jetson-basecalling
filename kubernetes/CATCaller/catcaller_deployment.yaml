@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catcaller-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catcaller_worker
+  template:
+    metadata:
+      labels:
+        app: catcaller_worker
+    spec:
+      containers:
+      - name: catcaller_worker
+        image: drigix/catcaller-jetson-nano:latest
+        ports:
+        - containerPort: 5000
+        env:
+        - name: CATCALLER_NODE
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName

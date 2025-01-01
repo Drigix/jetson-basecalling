@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chiron-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chiron-worker
+  template:
+    metadata:
+      labels:
+        app: chiron-worker
+    spec:
+      containers:
+      - name: chiron-worker
+        image: drigix/chiron-jetson-nano:latest
+        resources:
+          limits:
+            nvidia.com/gpu: 1 # Request one GPU
+        ports:
+        - containerPort: 6000
+        env:
+        - name: SACALL_NODE
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName

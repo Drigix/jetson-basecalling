@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sacall-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sacall-worker
+  template:
+    metadata:
+      labels:
+        app: sacall-worker
+    spec:
+      containers:
+      - name: sacall-worker
+        image: drigix/sacaller-jetson-nano:latest
+        resources:
+          limits:
+            nvidia.com/gpu: 1 # Request one GPU
+        ports:
+        - containerPort: 6000
+        env:
+        - name: SACALL_NODE
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
