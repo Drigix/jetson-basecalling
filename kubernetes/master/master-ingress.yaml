@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: master-ingress
+spec:
+  rules:
+  - host: ""
+    http:
+      paths:
+      - path: /sacall
+        pathType: Prefix
+        backend:
+          service:
+            name: sacall-service
+            port:
+              number: 81
+      - path: /catcaller
+        pathType: Prefix
+        backend:
+          service:
+            name: catcaller-service
+            port:
+              number: 82
+      - path: /chiron
+        pathType: Prefix
+        backend:
+          service:
+            name: chiron-service
+            port:
+              number: 83

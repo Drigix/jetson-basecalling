@@ -19,7 +19,7 @@ spec:
           limits:
             nvidia.com/gpu: 1 # Request one GPU
         ports:
-        - containerPort: 6000
+        - containerPort: 6001
         env:
         - name: SACALL_NODE
           valueFrom:

@@ -19,9 +19,9 @@ spec:
           limits:
             nvidia.com/gpu: 1 # Request one GPU
         ports:
-        - containerPort: 6000
+        - containerPort: 6003
         env:
-        - name: SACALL_NODE
+        - name: CHIRON_NODE
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName

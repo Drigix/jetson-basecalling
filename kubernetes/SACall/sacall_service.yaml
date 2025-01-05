@@ -9,4 +9,4 @@ spec:
   ports:
     - protocol: TCP
       port: 81       # Port that the service will expose
-      targetPort: 6000 # Port that the application is running on
+      targetPort: 6001 # Port that the application is running on
