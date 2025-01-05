@@ -1,0 +1,1 @@
+bash ./test/run_caller.sh ./model/model.2048.chkpt /jetson-basecalling/test_sample/ 128 /output_sample/
