@@ -9,6 +9,8 @@ import torch
 import torch.nn as nn
 import torch.utils.data as Data
 import constants as Constants
+import psutil
+import threading
 from ctc_decoder import BeamCTCDecoder, GreedyDecoder
 from tqdm import tqdm
 from torch import multiprocessing as mp
@@ -90,8 +92,6 @@ def writer(argv,item,write_mutex):
     print('\n end decode, time = ', datetime.datetime.now()-start_decode)
     write_mutex.value = 1
 
-
-
 def decode_process(argv, qdecoder):
     pool = mp.Pool(argv.threads)
     manager = mp.Manager()
@@ -109,7 +109,49 @@ def decode_process(argv, qdecoder):
             pool.join()
             return
         pool.apply_async(func=writer, args=(argv, item, write_mutex))
+        
+def get_size(path):
+    if os.path.isdir(path):
+        size = sum(os.path.getsize(os.path.join(dirpath, filename))
+                   for dirpath, _, filenames in os.walk(path)
+                   for filename in filenames)
+    elif os.path.isfile(path):
+        size = os.path.getsize(path)
+    else:
+        raise ValueError(f"Path {path} doesn't exist!")
+    return size / (1024 ** 2)
 
+
+def save_metrics_to_csv(filepath, metrics):
+    file_exists = os.path.isfile(filepath)
+    with open(filepath, mode='a', newline='') as file:
+        writer = csv.DictWriter(file, fieldnames=[
+            'file_size', 'time', 'ram', 'cpu'
+        ])
+        if not file_exists:
+            writer.writeheader()
+        for metric in metrics:
+            writer.writerow(metric)
+
+
+def monitor_metrics(stop_event, start_time, file_size, metrics_list):
+    """Monitor system metrics every ... seconds and save to the list."""
+    while not stop_event.is_set():
+        metrics = {
+            'file_size': file_size,
+            'time': time.time() - start_time,
+            'ram': psutil.virtual_memory().used / (1024 ** 2),
+            # 'gpu': stats['GPU1'],
+            'cpu': psutil.cpu_percent(interval=1),
+            # 'cpu2': stats['CPU2'],
+            # 'cpu3': stats['CPU3'],
+            # 'cpu4': stats['CPU4'],
+            # 'temperature_cpu': stats['Temp CPU'],
+            # 'temperature_gpu': stats['Temp GPU'],
+            # 'power_avg': stats['power avg'],
+        }
+        metrics_list.append(metrics)
+        time.sleep(5)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -132,9 +174,27 @@ def main():
         os.remove(os.path.join(argv.output, 'out.fasta'))
     argv.outpath = os.path.join(argv.output, 'out.fasta')
 
+    try:
+        records_size_mb = get_size(argv.records_dir)
+        print(f"Sample data size: {records_size_mb:.2f} MB")
+    except ValueError as e:
+        print(e)
+        return
+    
+    metric_file = os.path.join('./', 'jetson_metrics.csv')
+
+    # Monitor RAM usage
+    ram_usage_before = psutil.virtual_memory().used / (1024 ** 2)
+
+    system_metrics = []
+    stop_event = threading.Event()
+
+    monitoring_thread = threading.Thread(target=monitor_metrics, args=(
+        stop_event, start_time, records_size_mb, system_metrics))
+    monitoring_thread.start()
+    
+    # Start time
     start_time = datetime.datetime.now()
-
-
 
     #load model and prepare dataloader
     torch.set_grad_enabled(False)
@@ -144,61 +204,83 @@ def main():
     if argv.half:
         model.half()
 
-    #create queue and process
-    qdecoder = mp.Queue()
-    decoder_proc = mp.Process(target=decode_process, args=(argv, qdecoder))
-    decoder_proc.start()
+    try:
+        #create queue and process
+        qdecoder = mp.Queue()
+        decoder_proc = mp.Process(target=decode_process, args=(argv, qdecoder))
+        decoder_proc.start()
 
-    call_dataset = CallDataset(argv)
-    data_iter = Data.DataLoader(dataset=call_dataset, batch_size=1, num_workers=0)
-    with torch.no_grad():
-        read_id_list = []
-        row_num_list = []
-        log_probs_list = []
-        output_lengths_list = []
-        # encoded_num = 0
-        for batch in tqdm(data_iter):
-            read_id, signal = batch
-            read_id = read_id[0]
-            signal = signal[0]
-            row_num = 0
-            signal_segs = signal.shape[0]
-            for i in range(signal_segs // 32 + 1):
-                if i != signal_segs // 32:
-                    signal_batch = signal[i * 32:(i + 1) * 32]
-                elif signal_segs % 32 != 0:
-                    signal_batch = signal[i * 32:]
-                else:
-                    continue
-                if argv.half:
-                    signal_batch = torch.HalfTensor(signal_batch).to(argv.device)
-                else:
-                    signal_batch = torch.FloatTensor(signal_batch).to(argv.device)
-                signal_lengths = signal_batch.squeeze(2).ne(Constants.SIG_PAD).sum(1)
-                output, output_lengths = model(signal_batch, signal_lengths)
-                log_probs = output.log_softmax(2)
-                row_num += log_probs.shape[0]
-                log_probs_list.append(log_probs.cpu().detach())
-                output_lengths_list.append(output_lengths.cpu().detach())
-            read_id_list.append(read_id)
-            row_num_list.append(row_num)
-            # encoded_num += 1
-            # print('\r encoded_num={}'.format(encoded_num),end="")
-            if len(read_id_list) == 50:
+        call_dataset = CallDataset(argv)
+        data_iter = Data.DataLoader(dataset=call_dataset, batch_size=1, num_workers=0)
+        with torch.no_grad():
+            read_id_list = []
+            row_num_list = []
+            log_probs_list = []
+            output_lengths_list = []
+            # encoded_num = 0
+            for batch in tqdm(data_iter):
+                read_id, signal = batch
+                read_id = read_id[0]
+                signal = signal[0]
+                row_num = 0
+                signal_segs = signal.shape[0]
+                for i in range(signal_segs // 32 + 1):
+                    if i != signal_segs // 32:
+                        signal_batch = signal[i * 32:(i + 1) * 32]
+                    elif signal_segs % 32 != 0:
+                        signal_batch = signal[i * 32:]
+                    else:
+                        continue
+                    if argv.half:
+                        signal_batch = torch.HalfTensor(signal_batch).to(argv.device)
+                    else:
+                        signal_batch = torch.FloatTensor(signal_batch).to(argv.device)
+                    signal_lengths = signal_batch.squeeze(2).ne(Constants.SIG_PAD).sum(1)
+                    output, output_lengths = model(signal_batch, signal_lengths)
+                    log_probs = output.log_softmax(2)
+                    row_num += log_probs.shape[0]
+                    log_probs_list.append(log_probs.cpu().detach())
+                    output_lengths_list.append(output_lengths.cpu().detach())
+                read_id_list.append(read_id)
+                row_num_list.append(row_num)
+                # encoded_num += 1
+                # print('\r encoded_num={}'.format(encoded_num),end="")
+                if len(read_id_list) == 50:
+                    qdecoder.put((read_id_list, row_num_list, log_probs_list, output_lengths_list))
+                    read_id_list = []
+                    row_num_list = []
+                    log_probs_list = []
+                    output_lengths_list = []
+            if len(read_id_list) > 0:
                 qdecoder.put((read_id_list, row_num_list, log_probs_list, output_lengths_list))
-                read_id_list = []
-                row_num_list = []
-                log_probs_list = []
-                output_lengths_list = []
-        if len(read_id_list) > 0:
-            qdecoder.put((read_id_list, row_num_list, log_probs_list, output_lengths_list))
+    finally:
+        qdecoder.put(None)
+        decoder_proc.join()
+        # Stop monitoring
+        stop_event.set()
+        monitoring_thread.join()
 
+    print("Collect system metrics...")
 
-    qdecoder.put(None)
-    decoder_proc.join()
+    # Monitor RAM and GPU usage after
+    ram_usage_after = psutil.virtual_memory().used / (1024 ** 2)
 
+    # Resource usage summary
+    print(
+        f"RAM usage before: {ram_usage_before:.2f} MB, after: {ram_usage_after:.2f} MB")
 
+    # End time
     end_time = datetime.datetime.now()
+    print(
+        f"End time: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(end_time))}")
+
+    # Execution time
+    execution_time = end_time - start_time
+    print(f"Execution time: {execution_time:.2f} sekund")
+
+    # Save collected metrics to CSV
+    save_metrics_to_csv(metric_file, system_metrics)
+    
     duration = end_time - start_time
     fw = open(os.path.join(argv.output,'caller_time.out'), 'w')
     fw.write(str(duration))

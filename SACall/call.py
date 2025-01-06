@@ -23,7 +23,6 @@ from tqdm import tqdm
 from multiprocessing import Process, Manager
 import time
 import psutil
-from jtop import jtop
 import csv
 from datetime import datetime
 import threading
@@ -195,6 +194,7 @@ def decode_process(outpath, encode_mutex, decode_mutex, write_mutex):
     write_mutex.value = 1
     decode_mutex.value = 1
 
+
 def get_size(path):
     if os.path.isdir(path):
         size = sum(os.path.getsize(os.path.join(dirpath, filename))
@@ -211,33 +211,33 @@ def save_metrics_to_csv(filepath, metrics):
     file_exists = os.path.isfile(filepath)
     with open(filepath, mode='a', newline='') as file:
         writer = csv.DictWriter(file, fieldnames=[
-            'file_size', 'time', 'ram', 'gpu', 'cpu1', 'cpu2', 'cpu3', 'cpu4',
-            'temperature_cpu', 'temperature_gpu', 'power_avg'
+            'file_size', 'time', 'ram', 'cpu'
         ])
         if not file_exists:
             writer.writeheader()
         for metric in metrics:
             writer.writerow(metric)
 
-def monitor_metrics(stop_event, start_time, file_size, metrics_list, filepath, jetson):
+
+def monitor_metrics(stop_event, start_time, file_size, metrics_list):
     """Monitor system metrics every ... seconds and save to the list."""
     while not stop_event.is_set():
-        stats = jetson.stats
         metrics = {
             'file_size': file_size,
             'time': time.time() - start_time,
             'ram': psutil.virtual_memory().used / (1024 ** 2),
-            'gpu': stats['GPU1'],
-            'cpu1': stats['CPU1'],
-            'cpu2': stats['CPU2'],
-            'cpu3': stats['CPU3'],
-            'cpu4': stats['CPU4'],
-            'temperature_cpu': stats['Temp CPU'],
-            'temperature_gpu': stats['Temp GPU'],
-            'power_avg': stats['power avg'],
+            # 'gpu': stats['GPU1'],
+            'cpu': psutil.cpu_percent(interval=1),
+            # 'cpu2': stats['CPU2'],
+            # 'cpu3': stats['CPU3'],
+            # 'cpu4': stats['CPU4'],
+            # 'temperature_cpu': stats['Temp CPU'],
+            # 'temperature_gpu': stats['Temp GPU'],
+            # 'power_avg': stats['power avg'],
         }
         metrics_list.append(metrics)
         time.sleep(5)
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -247,17 +247,6 @@ def main():
     parser.add_argument('-no_cuda', action='store_true')
     argv = parser.parse_args()
 
-    # Start time
-    start_time = time.time()
-    print(f"Start time: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))}")
-
-    try:
-        records_size_mb = get_size(argv.records_dir)
-        print(f"Sample data size: {records_size_mb:.2f} MB")
-    except ValueError as e:
-        print(e)
-        return
-
     if not os.path.exists(argv.output):
         os.makedirs(argv.output)
     if os.path.exists(os.path.join(argv.output, 'call.fasta')):
@@ -265,68 +254,60 @@ def main():
     argv.cuda = not argv.no_cuda
     device = torch.device('cuda' if argv.cuda else 'cpu')
     argv.device = device
+    
+    try:
+        records_size_mb = get_size(argv.records_dir)
+        print(f"Sample data size: {records_size_mb:.2f} MB")
+    except ValueError as e:
+        print(e)
+        return
 
     metric_file = os.path.join('./', 'jetson_metrics.csv')
 
     # Monitor RAM usage
-    ram_usage_before = psutil.virtual_memory().used / (1024 ** 2) 
+    ram_usage_before = psutil.virtual_memory().used / (1024 ** 2)
 
-    # Monitor GPU and system metrics
-    with jtop() as jetson:
-        system_metrics = []
-        stop_event = threading.Event()
+    system_metrics = []
+    stop_event = threading.Event()
 
-        monitoring_thread = threading.Thread(target=monitor_metrics, args=(stop_event, start_time, records_size_mb, system_metrics, metric_file, jetson))
-        monitoring_thread.start()
-        
-        # Start processing
-        try:
-            call_model = Call(argv).to(device)
-            encode(call_model, argv)
-        finally:
-            # Stop monitoring
-            stop_event.set()
-            monitoring_thread.join()
+    monitoring_thread = threading.Thread(target=monitor_metrics, args=(
+        stop_event, start_time, records_size_mb, system_metrics))
+    monitoring_thread.start()
 
-        print("Collect Jetson system metrics...")
-        
-        # Monitor RAM and GPU usage after
-        #ram_usage_after = psutil.virtual_memory().used / (1024 ** 2)
-        #ram_usage = ram_usage_after - ram_usage_before
+    # Start time
+    start_time = time.time()
+    print(
+        f"Start time: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))}")
 
-        # Resource usage summary
-        #print(f"RAM usage before: {ram_usage_before:.2f} MB, after: {ram_usage_after:.2f} MB")
+    # Start processing
+    try:
+        call_model = Call(argv).to(device)
+        encode(call_model, argv)
+    finally:
+        # Stop monitoring
+        stop_event.set()
+        monitoring_thread.join()
 
-        # End time
-        end_time = time.time()
-        print(f"End time: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(end_time))}")
+    print("Collect system metrics...")
 
-        # Execution time
-        execution_time = end_time - start_time
-        print(f"Execution time: {execution_time:.2f} sekund")
-            
-        # stats = jetson.stats
-        # system_metrics.append({
-        #     'file_size': records_size_mb,
-        #     'time': execution_time,
-        #     'ram': ram_usage,
-        #     'gpu': stats['GPU1'],
-        #     'cpu1': stats['CPU1'],
-        #     'cpu2': stats['CPU2'],
-        #     'cpu3': stats['CPU3'],
-        #     'cpu4': stats['CPU4'],
-        #     'temperature_cpu': stats['Temp CPU'],
-        #     'temperature_gpu': stats['Temp GPU'],
-        #     'power_avg': stats['power avg'],
-        # })
+    # Monitor RAM and GPU usage after
+    ram_usage_after = psutil.virtual_memory().used / (1024 ** 2)
 
-        print(f"Metrics length: {len(system_metrics)}")
-        # Save collected metrics to CSV
-        save_metrics_to_csv(metric_file, system_metrics)
+    # Resource usage summary
+    print(
+        f"RAM usage before: {ram_usage_before:.2f} MB, after: {ram_usage_after:.2f} MB")
 
-    # Save or display system metrics
- #   for metric in system_metrics:
- #       print(metric)  # Replace with saving to a file if needed
+    # End time
+    end_time = time.time()
+    print(
+        f"End time: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(end_time))}")
+
+    # Execution time
+    execution_time = end_time - start_time
+    print(f"Execution time: {execution_time:.2f} sekund")
+
+    # Save collected metrics to CSV
+    save_metrics_to_csv(metric_file, system_metrics)
 
 
 if __name__ == "__main__":
