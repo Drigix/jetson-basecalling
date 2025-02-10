@@ -215,6 +215,8 @@ def save_metrics_to_csv(filepath, metrics):
         ])
         if not file_exists:
             writer.writeheader()
+        else:
+            file.write("#\n")
         for metric in metrics:
             writer.writerow(metric)
 

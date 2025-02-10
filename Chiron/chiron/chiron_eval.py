@@ -15,7 +15,6 @@ import time
 
 import numpy as np
 import tensorflow as tf
-import psutil
 from chiron import chiron_model
 from chiron.chiron_input import read_data_for_eval
 from chiron.cnn import getcnnfeature
@@ -27,7 +26,6 @@ from chiron.utils.easy_assembler import global_alignment_assembly
 from chiron.utils.unix_time import unix_time
 from chiron.utils.progress import multi_pbars
 from six.moves import range
-import threading
 from collections import defaultdict
 from collections import namedtuple
 
@@ -567,51 +565,6 @@ def decoding_queue(logits_queue, num_threads=6):
     tf.train.add_queue_runner(decode_qr)
     return decode_predict, decode_prob, decode_fname, decode_idx, decodeedQueue.size()
 
-
-def get_size(path):
-    if os.path.isdir(path):
-        size = sum(os.path.getsize(os.path.join(dirpath, filename))
-                   for dirpath, _, filenames in os.walk(path)
-                   for filename in filenames)
-    elif os.path.isfile(path):
-        size = os.path.getsize(path)
-    else:
-        raise ValueError(f"Path {path} doesn't exist!")
-    return size / (1024 ** 2)
-
-
-def save_metrics_to_csv(filepath, metrics):
-    file_exists = os.path.isfile(filepath)
-    with open(filepath, mode='a', newline='') as file:
-        writer = csv.DictWriter(file, fieldnames=[
-            'file_size', 'time', 'ram', 'cpu'
-        ])
-        if not file_exists:
-            writer.writeheader()
-        for metric in metrics:
-            writer.writerow(metric)
-
-
-def monitor_metrics(stop_event, start_time, file_size, metrics_list):
-    """Monitor system metrics every ... seconds and save to the list."""
-    while not stop_event.is_set():
-        metrics = {
-            'file_size': file_size,
-            'time': time.time() - start_time,
-            'ram': psutil.virtual_memory().used / (1024 ** 2),
-            # 'gpu': stats['GPU1'],
-            'cpu': psutil.cpu_percent(interval=1),
-            # 'cpu2': stats['CPU2'],
-            # 'cpu3': stats['CPU3'],
-            # 'cpu4': stats['CPU4'],
-            # 'temperature_cpu': stats['Temp CPU'],
-            # 'temperature_gpu': stats['Temp GPU'],
-            # 'power_avg': stats['power avg'],
-        }
-        metrics_list.append(metrics)
-        time.sleep(5)
-
-
 def run(args):
     global FLAGS
     FLAGS = args
@@ -667,14 +620,6 @@ if __name__ == "__main__":
                         help="Preset evaluation parameters. Can be one of the following:\ndna-pre\nrna-pre")
     args = parser.parse_args(sys.argv[1:])
 
-    try:
-        records_size_mb = get_size(argv.records_dir)
-        print(f"Sample data size: {records_size_mb:.2f} MB")
-    except ValueError as e:
-        print(e)
-
-    metric_file = os.path.join('./', 'jetson_metrics.csv')
-
     def set_paras(p):
         args.start = p['start'] if args.start is None else args.start
         args.batch_size = p['batch_size'] if args.batch_size is None else args.batch_size
@@ -707,47 +652,6 @@ if __name__ == "__main__":
         args.reverse_fast5 = False
 
     set_paras(default_p)
-    
-    # Monitor RAM usage
-    ram_usage_before = psutil.virtual_memory().used / (1024 ** 2)
 
-    system_metrics = []
-    stop_event = threading.Event()
+    run(args)
 
-    # Start time
-    start_time = time.time()
-    print(
-        f"Start time: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))}")
-
-    monitoring_thread = threading.Thread(target=monitor_metrics, args=(
-        stop_event, start_time, records_size_mb, system_metrics))
-    monitoring_thread.start()
-
-    # Start processing
-    try: 
-        run(args)
-    finally:
-        # Stop monitoring
-        stop_event.set()
-        monitoring_thread.join()
-    
-    print("Collect system metrics...")
-    
-    # Monitor RAM and GPU usage after
-    ram_usage_after = psutil.virtual_memory().used / (1024 ** 2)
-
-    # Resource usage summary
-    print(
-        f"RAM usage before: {ram_usage_before:.2f} MB, after: {ram_usage_after:.2f} MB")
-
-    # End time
-    end_time = time.time()
-    print(
-        f"End time: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(end_time))}")
-
-    # Execution time
-    execution_time = end_time - start_time
-    print(f"Execution time: {execution_time:.2f} sekund")
-
-    # Save collected metrics to CSV
-    save_metrics_to_csv(metric_file, system_metrics)

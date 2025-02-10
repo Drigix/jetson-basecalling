@@ -1,1 +1,1 @@
-python3 /jetson-basecalling/Chiron/chiron/entry.py call -i /jetson-basecalling/test_sample/ -o /output_sample/ -m /jetson-basecalling/Chiron/model/DNA_default --preset dna-pre -b 140
+python3 /jetson-basecalling/Chiron/chiron/entry.py call -i /jetson-basecalling/test_sample/ -o /output_sample/ -m /jetson-basecalling/Chiron/chiron/model/DNA_default --preset dna-pre -b 140
