@@ -55,13 +55,22 @@ RUN pip3 install statsmodels Levenshtein tqdm
 RUN wget developer.download.nvidia.com/compute/redist/jp/v44/tensorflow/tensorflow-1.15.4+nv20.12-cp36-cp36m-linux_aarch64.whl && \
     python3 -m pip install --no-cache-dir tensorflow-1.15.4+nv20.12-cp36-cp36m-linux_aarch64.whl
 
-RUN pip3 install chiron
-
 RUN rm -rf h5py-3.1.0-cp36-cp36m-linux_aarch64.whl && \
     rm -rf tensorflow-1.15.4+nv20.12-cp36-cp36m-linux_aarch64.whl
 
 # Download example data and basecaller
 RUN git clone --recursive https://github.com/Drigix/jetson-basecalling.git 
 
+RUN pip3 install chiron
+
+# Optional install psutil to monitor metris
+RUN pip3 install psutil 
+
+# Optional install flask to run bascalling from urls
+RUN pip3 install flask
+
 # Add a simple command to keep the container alive
 CMD ["tail", "-f", "/dev/null"]
+
+# Run flask listener
+#CMD ["python3", "/jetson-basecalling/Chiron/flask_listener.py"]
