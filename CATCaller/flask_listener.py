@@ -1,23 +1,17 @@
-from flask import Flask
+from flask import Flask, request
 import subprocess
 
 app = Flask(__name__)
 
-@app.route('/catcaller/', defaults={'input_path': None, 'batch_size': None}, methods=['GET'])
-@app.route('/catcaller/<path:input_path>/<int:batch_size>', methods=['GET'])
-def run_script(input_path, batch_size):
+@app.route('/catcaller/', methods=['GET'])
+def run_script():
+    input_path = request.args.get('input_path', "/jetson-basecalling/test_sample/small/")
+    batch_size = request.args.get('batch_size', 128)
+    
     try:
-        if input_path is None or batch_size is None:
-            # Scripts with default parameters
-            command = ['bash', 'run_basecalling.sh', "/jetson-basecalling/test_sample/small/", str(128)]
-            msg = 'Running default script'
-        else:
-            # Scripts with pass parameters
-            command = ['bash', 'run_basecalling.sh', input_path, str(batch_size)]
-            msg = f'Running script with input: {input_path}, batch size: {batch_size}'
-        
+        command = ['bash', 'run_basecalling.sh', input_path, str(batch_size)]
         subprocess.run(command, check=True)
-        return msg
+        return f'Running script with input: {input_path}, batch size: {batch_size}'
     except subprocess.CalledProcessError as e:
         return f'Error: {e}', 500
 

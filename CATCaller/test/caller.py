@@ -121,30 +121,32 @@ def get_size(path):
         raise ValueError(f"Path {path} doesn't exist!")
     return size / (1024 ** 2)
 
+def save_execution_stats_to_csv(filepath, metrics):
+    with open(filepath, mode='w', newline='') as file:
+        writer = csv.DictWriter(file, fieldnames=['file_size', 'execution_time'])
+        writer.writeheader() 
+        for metric in metrics:
+            writer.writerow(metric)
 
 def save_metrics_to_csv(filepath, metrics):
-    file_exists = os.path.isfile(filepath)
-    with open(filepath, mode='a', newline='') as file:
-        writer = csv.DictWriter(file, fieldnames=[
-            'file_size', 'time', 'ram', 'cpu'
-        ])
-        if not file_exists:
-            writer.writeheader()
-        else:
-            file.write("#\n")
+    with open(filepath, mode='w', newline='') as file:
+        writer = csv.DictWriter(file, fieldnames=['time', 'ram', 'cpu', 'temp_cpu'])
+        writer.writeheader()
         for metric in metrics:
             writer.writerow(metric)
 
 
-def monitor_metrics(stop_event, start_time, file_size, metrics_list):
+def monitor_metrics(stop_event, start_time, metrics_list):
     """Monitor system metrics every ... seconds and save to the list."""
     while not stop_event.is_set():
+        temps = psutil.sensors_temperatures()
+    
         metrics = {
-            'file_size': file_size,
             'time': time.time() - start_time,
             'ram': psutil.virtual_memory().used / (1024 ** 2),
             # 'gpu': stats['GPU1'],
             'cpu': psutil.cpu_percent(interval=1),
+            'temp_cpu': temps["thermal-fan-est"][0].current
             # 'cpu2': stats['CPU2'],
             # 'cpu3': stats['CPU3'],
             # 'cpu4': stats['CPU4'],
@@ -183,20 +185,21 @@ def main():
         print(e)
         return
     
+    execution_stats_file = os.path.join('./', 'execution_statistic.csv')
     metric_file = os.path.join('./', 'jetson_metrics.csv')
 
     # Monitor RAM usage
     ram_usage_before = psutil.virtual_memory().used / (1024 ** 2)
+    
+    # Start time
+    start_time = datetime.datetime.now()
 
     system_metrics = []
     stop_event = threading.Event()
 
     monitoring_thread = threading.Thread(target=monitor_metrics, args=(
-        stop_event, start_time, records_size_mb, system_metrics))
+        stop_event, start_time, system_metrics))
     monitoring_thread.start()
-    
-    # Start time
-    start_time = datetime.datetime.now()
 
     #load model and prepare dataloader
     torch.set_grad_enabled(False)
@@ -279,15 +282,12 @@ def main():
     # Execution time
     execution_time = end_time - start_time
     print(f"Execution time: {execution_time:.2f} sekund")
+    
+    # Save execution stats to CSV
+    save_execution_stats_to_csv(execution_stats_file, [{'file_size': records_size_mb, 'execution_time': execution_time}])
 
     # Save collected metrics to CSV
     save_metrics_to_csv(metric_file, system_metrics)
-    
-    duration = end_time - start_time
-    fw = open(os.path.join(argv.output,'caller_time.out'), 'w')
-    fw.write(str(duration))
-    fw.close()
-
 
 if __name__ == "__main__":
     mp.set_start_method('spawn', force=True)
