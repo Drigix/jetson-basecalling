@@ -64,9 +64,6 @@ RUN git clone --recursive https://github.com/parlance/ctcdecode.git && \
     cd .. && \
     rm -rf ctcdecode
 
-# Download example data and basecaller
-RUN git clone --recursive https://github.com/Drigix/jetson-basecalling.git 
-
 RUN rm -rf h5py-3.1.0-cp36-cp36m-linux_aarch64.whl && \
     rm -rf tensorflow-1.15.4+nv20.12-cp36-cp36m-linux_aarch64.whl
 
@@ -77,8 +74,11 @@ RUN pip3 install psutil
 RUN pip3 install flask
 
 # Opitonal install azure cosmos to saving result and metrics
-#RUN pip3 install azure-cosmos && \
-#    pip3 install azure-identity
+RUN pip3 install azure-cosmos && \
+   pip3 install azure-identity
+
+# Download example data and basecaller
+RUN git clone --recursive https://github.com/Drigix/jetson-basecalling.git 
 
 # Add a simple command to keep the container alive
 CMD ["tail", "-f", "/dev/null"]

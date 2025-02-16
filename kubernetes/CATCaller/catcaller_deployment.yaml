@@ -6,15 +6,18 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: catcaller_worker
+      app: catcaller-worker
   template:
     metadata:
       labels:
-        app: catcaller_worker
+        app: catcaller-worker
     spec:
       containers:
-      - name: catcaller_worker
+      - name: catcaller-worker
         image: drigix/catcaller-jetson-nano:latest
+        resources:
+          limits:
+            nvidia.com/gpu: 1 # Request one GPU
         ports:
         - containerPort: 6002
         env:
