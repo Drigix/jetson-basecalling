@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rodan-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rodan-worker
+  template:
+    metadata:
+      labels:
+        app: rodan-worker
+    spec:
+      containers:
+      - name: rodan-worker
+        image: drigix/rodan-jetson-nano:latest
+        resources:
+          limits:
+            nvidia.com/gpu: 1 # Request one GPU
+        ports:
+        - containerPort: 6004
+        env:
+        - name: RODAN_NODE
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
