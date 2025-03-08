@@ -25,7 +25,6 @@ def read_jetson_metrics(file_path):
         values = next(reader)
         metrics = []
         for row in reader:
-            print(row)
             metric = {
                 "time": float(row[0]),      # Convert time to float
                 "ram": float(row[1]),       # Convert RAM to float

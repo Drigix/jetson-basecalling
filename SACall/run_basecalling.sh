@@ -8,4 +8,4 @@ echo "Batch Size: $BATCH_SIZE"
 
 bash run_caller.sh ./model.chkpt "$INPUT_PATH" "$SIGNAL_WINDOW_LENGTH" /output_sample/ "$BATCH_SIZE"
 
-bash python3 /jetson-basecalling/metrics/db/call_db.py SACALL_STATS /jetson-basecalling/SACall/execution_statistic.csv /jetson-basecalling/SACall/jetson_metrics.csv
+python3 /jetson-basecalling/metrics/db/call_db.py SACALL_STATS /jetson-basecalling/SACall/execution_statistic.csv /jetson-basecalling/SACall/jetson_metrics.csv
