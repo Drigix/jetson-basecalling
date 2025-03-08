@@ -99,11 +99,11 @@ def encode(model, opt):
     encode_mutex = manager.Value('i', 1)
     decode_mutex = manager.Value('i', 1)
     write_mutex = manager.Value('i', 1)
-
+    batch_size = int(opt.batch_size)
     model.eval()
     call_dataset = CallDataset(opt.records_dir)
     data_iter = Data.DataLoader(
-        dataset=call_dataset, batch_size=opt.batch_size, num_workers=0)
+        dataset=call_dataset, batch_size=batch_size, num_workers=0)
     if not os.path.exists(opt.output):
         os.makedirs(opt.output)
     else:
