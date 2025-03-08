@@ -103,7 +103,7 @@ def encode(model, opt):
     model.eval()
     call_dataset = CallDataset(opt.records_dir)
     data_iter = Data.DataLoader(
-        dataset=call_dataset, batch_size=1, num_workers=0)
+        dataset=call_dataset, batch_size=opt.batch_size, num_workers=0)
     if not os.path.exists(opt.output):
         os.makedirs(opt.output)
     else:
@@ -247,6 +247,7 @@ def main():
     parser.add_argument('-records_dir', required=True)
     parser.add_argument('-output', required=True)
     parser.add_argument('-no_cuda', action='store_true')
+    parser.add_argument('-batch_size', required=True)
     argv = parser.parse_args()
 
     if not os.path.exists(argv.output):
