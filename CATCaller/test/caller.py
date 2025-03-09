@@ -123,7 +123,7 @@ def get_size(path):
 
 def save_execution_stats_to_csv(filepath, metrics):
     with open(filepath, mode='w', newline='') as file:
-        writer = csv.DictWriter(file, fieldnames=['file_size', 'execution_time'])
+        writer = csv.DictWriter(file, fieldnames=['file_size', 'execution_time', 'batch_size'])
         writer.writeheader() 
         for metric in metrics:
             writer.writerow(metric)
@@ -165,6 +165,7 @@ def main():
     parser.add_argument('-no_cuda', action='store_true')
     parser.add_argument('-threads', type=int,default=4)
     parser.add_argument('-half', action='store_true', default=False)
+    parser.add_argument('-batch_size', required=True)
     argv = parser.parse_args()
 
     argv.cuda = not argv.no_cuda
@@ -214,9 +215,11 @@ def main():
         qdecoder = mp.Queue()
         decoder_proc = mp.Process(target=decode_process, args=(argv, qdecoder))
         decoder_proc.start()
-
+        
+        batch_size = int(argv.batch_size)
+        
         call_dataset = CallDataset(argv)
-        data_iter = Data.DataLoader(dataset=call_dataset, batch_size=1, num_workers=0)
+        data_iter = Data.DataLoader(dataset=call_dataset, batch_size=batch_size, num_workers=0)
         with torch.no_grad():
             read_id_list = []
             row_num_list = []
@@ -284,7 +287,7 @@ def main():
     print(f"Execution time: {execution_time:.2f} sekund")
     
     # Save execution stats to CSV
-    save_execution_stats_to_csv(execution_stats_file, [{'file_size': records_size_mb, 'execution_time': execution_time}])
+    save_execution_stats_to_csv(execution_stats_file, [{'file_size': records_size_mb, 'execution_time': execution_time, 'batch_size': argv.batch_size}])
 
     # Save collected metrics to CSV
     save_metrics_to_csv(metric_file, system_metrics)

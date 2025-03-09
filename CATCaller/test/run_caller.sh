@@ -2,6 +2,7 @@ model_path=$1   # path/to/model.2048.chkpt
 fast5_dir_root=$2  # path/to/test/fast5s
 signal_window_length=$3  # 2048
 basecalled_dir=$4  # path/to/basecalled/fasta/files
+batch_size=$5
 tmp_records_root="tmp_data_dir"
 
 # Add Python module path
@@ -22,7 +23,7 @@ do
     printf "${p} preprocessing done\n"
 
     # Caller
-    python3 ./caller.py -model ${model_path} -records_dir ${tmp_records_dir} -output ${basecalled_dir}/${p} -half
+    python3 ./caller.py -model ${model_path} -records_dir ${tmp_records_dir} -output ${basecalled_dir}/${p} -half -batch_size ${batch_size}
     endtime=`date +'%Y-%m-%d %H:%M:%S'`
     echo "${p} finished!"
     start_seconds=$(date --date="$starttime" +%s)

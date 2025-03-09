@@ -86,7 +86,8 @@ RUN pip3 install flask
 
 # Opitonal install azure cosmos to saving result and metrics
 RUN pip3 install azure-cosmos && \
-   pip3 install azure-identity
+   pip3 install azure-identity && \
+   pip3 install python-dotenv
 
 # Add a simple command to keep the container alive
 CMD ["tail", "-f", "/dev/null"]
