@@ -204,7 +204,7 @@ def get_size(path):
         size = os.path.getsize(path)
     else:
         raise ValueError(f"Path {path} doesn't exist!")
-    return size / (1024 ** 2)
+    return round(size / (1024 ** 2), 2)
 
 def save_execution_stats_to_csv(filepath, metrics):
     with open(filepath, mode='w', newline='') as file:
