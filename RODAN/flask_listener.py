@@ -11,6 +11,15 @@ def run_script():
     try:
         command = ['bash', 'run_basecalling.sh', input_path, str(batch_size)]
         subprocess.run(command, check=True)
+        
+        db_command = [
+            'python3', '/jetson-basecalling/metrics/db/call_db.py',
+            'RODAN_STATS',
+            '/jetson-basecalling/RODAN/execution_statistic.csv',
+            '/jetson-basecalling/RODAN/jetson_metrics.csv'
+        ]
+        subprocess.run(db_command, check=True)
+        
         return f'Running script with input: {input_path}, batch size: {batch_size}'
     except subprocess.CalledProcessError as e:
         return f'Error: {e}', 500

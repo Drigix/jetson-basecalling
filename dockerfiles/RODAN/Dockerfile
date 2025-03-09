@@ -82,7 +82,8 @@ RUN pip3 install flask
 
 # Opitonal install azure cosmos to saving result and metrics
 RUN pip3 install azure-cosmos && \
-   pip3 install azure-identity
+   pip3 install azure-identity && \
+   pip3 install python-dotenv
 
 # Download example data and basecaller
 RUN git clone --recursive https://github.com/Drigix/jetson-basecalling.git 
@@ -91,4 +92,4 @@ RUN git clone --recursive https://github.com/Drigix/jetson-basecalling.git
 CMD ["tail", "-f", "/dev/null"]
 
 # Run flask listener
-#CMD ["python3", "/jetson-basecalling/SACall/flask_listener.py"]
+#CMD ["python3", "/jetson-basecalling/RODAN/flask_listener.py"]
