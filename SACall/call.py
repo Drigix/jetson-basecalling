@@ -208,7 +208,7 @@ def get_size(path):
 
 def save_execution_stats_to_csv(filepath, metrics):
     with open(filepath, mode='w', newline='') as file:
-        writer = csv.DictWriter(file, fieldnames=['file_size', 'execution_time'])
+        writer = csv.DictWriter(file, fieldnames=['file_size', 'execution_time', 'batch_size'])
         writer.writeheader() 
         for metric in metrics:
             writer.writerow(metric)
@@ -311,7 +311,7 @@ def main():
     print(f"Execution time: {execution_time:.2f} sekund")
     
     # Save execution stats to CSV
-    save_execution_stats_to_csv(execution_stats_file, [{'file_size': records_size_mb, 'execution_time': execution_time}])
+    save_execution_stats_to_csv(execution_stats_file, [{'file_size': records_size_mb, 'execution_time': execution_time, 'batch_size': argv.batch_size}])
 
     # Save collected metrics to CSV
     save_metrics_to_csv(metric_file, system_metrics)
