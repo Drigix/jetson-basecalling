@@ -7,29 +7,29 @@ def read_execution_statistics(file_path):
     """Reads execution statistics from CSV file (file_size, execution_time, batch_size)."""
     with open(file_path, mode="r", encoding="utf-8") as file:
         reader = csv.reader(file)
-        headers = next(reader)  # Read header row
-        values = next(reader)   # Read first data row
+        headers = next(reader)
+        values = next(reader)
 
-        data_dict = dict(zip(headers, map(float, values)))  # Convert to dict with float values
+        data_dict = dict(zip(headers, map(float, values))) 
         return {
             "file_size": data_dict.get("file_size", 0.0),
             "execution_time": data_dict.get("execution_time", 0.0),
-            "batch_size": int(data_dict.get("batch_size", 0))  # Convert batch_size to int
+            "batch_size": int(data_dict.get("batch_size", 0))
         }
 
 def read_jetson_metrics(file_path):
     """Reads metrics from CSV file and converts values to appropriate types."""
     with open(file_path, mode="r", encoding="utf-8") as file:
         reader = csv.reader(file)
-        headers = next(reader)  # Read header row
+        headers = next(reader)
         values = next(reader)
         metrics = []
         for row in reader:
             metric = {
-                "time": float(row[0]),      # Convert time to float
-                "ram": float(row[1]),       # Convert RAM to float
-                "cpu": float(row[2]),       # Convert CPU to float
-                "temp_cpu": float(row[3])   # Convert CPU temp to float
+                "time": float(row[0]),
+                "ram": float(row[1]),
+                "cpu": float(row[2]),
+                "temp_cpu": float(row[3])
             }
             metrics.append(metric)
 
@@ -57,7 +57,6 @@ def main():
         "metrics": metrics_data
     }
 
-    # Insert into Cosmos DB
     try:
        connector.container.create_item(body=data)
        print("Data has been added to container!")
