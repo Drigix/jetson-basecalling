@@ -142,7 +142,7 @@ def monitor_metrics(stop_event, start_time, metrics_list):
         temps = psutil.sensors_temperatures()
     
         metrics = {
-            'time': time.time() - start_time,
+            'time': datetime.datetime.now() - start_time,
             'ram': psutil.virtual_memory().used / (1024 ** 2),
             # 'gpu': stats['GPU1'],
             'cpu': psutil.cpu_percent(interval=1),
@@ -163,7 +163,7 @@ def main():
     parser.add_argument('-records_dir', required=True)
     parser.add_argument('-output', required=True)
     parser.add_argument('-no_cuda', action='store_true')
-    parser.add_argument('-threads', type=int,default=4)
+    parser.add_argument('-threads', type=int,default=1)
     parser.add_argument('-half', action='store_true', default=False)
     parser.add_argument('-batch_size', required=True)
     argv = parser.parse_args()
