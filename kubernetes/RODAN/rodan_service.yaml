@@ -8,5 +8,5 @@ spec:
     app: rodan-worker
   ports:
     - protocol: TCP
-      port: 81       # Port that the service will expose
+      port: 84       # Port that the service will expose
       targetPort: 6004 # Port that the application is running on
