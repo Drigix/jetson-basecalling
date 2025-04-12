@@ -28,3 +28,10 @@ spec:
             name: chiron-service
             port:
               number: 83
+      - path: /rodan
+        pathType: Prefix
+        backend:
+          service:
+            name: rodan-service
+            port:
+              number: 84
