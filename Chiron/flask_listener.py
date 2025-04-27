@@ -14,11 +14,11 @@ def run_script():
         
         db_command = [
             'python3', '/jetson-basecalling/metrics/db/call_db.py',
-            'CHIRON_STATS',
-            '/jetson-basecalling/Chiron/execution_statistic.csv',
-            '/jetson-basecalling/Chiron/jetson_metrics.csv'
+            '--query_type', 'INSERT',
+            '--container_name', 'CHIRON_STATS',
+            '--execution_stat_file', '/jetson-basecalling/SACall/execution_statistic.csv',
+            ' --jetson_metrics_file', '/jetson-basecalling/SACall/jetson_metrics.csv'
         ]
-        subprocess.run(db_command, check=True)
         
         return f'Running script with input: {input_path}, batch size: {batch_size}'
     except subprocess.CalledProcessError as e:

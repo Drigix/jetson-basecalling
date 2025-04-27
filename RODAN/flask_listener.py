@@ -14,9 +14,10 @@ def run_script():
         
         db_command = [
             'python3', '/jetson-basecalling/metrics/db/call_db.py',
-            'RODAN_STATS',
-            '/jetson-basecalling/RODAN/execution_statistic.csv',
-            '/jetson-basecalling/RODAN/jetson_metrics.csv'
+            '--query_type', 'INSERT',
+            '--container_name', 'RODAN_STATS',
+            '--execution_stat_file', '/jetson-basecalling/SACall/execution_statistic.csv',
+            ' --jetson_metrics_file', '/jetson-basecalling/SACall/jetson_metrics.csv'
         ]
         subprocess.run(db_command, check=True)
         
