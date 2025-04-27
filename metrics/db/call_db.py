@@ -102,7 +102,7 @@ def find_best_execution_by_file_size_and_batch_size(container_name, file_size, b
 def main():
     parser = argparse.ArgumentParser(description="Insert data into Cosmos DB")
     parser.add_argument("--query_type", type=str, required=True, help="Type of query to execute")
-    parser.add_argument("--container_name", type=str, required=True, help="Cosmos container name")
+    parser.add_argument("--container_name", type=str, help="Cosmos container name")
     
     # Parameters to create record
     parser.add_argument("--execution_stat_file", type=str, help="Path to execution_statistic.csv")
@@ -124,6 +124,10 @@ def main():
             return find_best_execution_by_file_size_and_batch_size(args.container_name, file_size, args.batch_size)
         else:
             print("batch_size is required for FIND query type.")
+    elif args.query_type == "FIND_CURRENT_EXECUTION_TIME":
+        return read_execution_statistics(args.execution_stat_file).get("execution_time", None)
+    elif args.query_type == "FIND_CURRENT_METRICS":
+        return read_jetson_metrics(args.jetson_metrics_file)
     else:
         print("Invalid query_type. Use 'INSERT' or 'FIND'.")
 

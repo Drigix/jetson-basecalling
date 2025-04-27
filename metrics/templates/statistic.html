@@ -1,13 +1,95 @@
-<!DOCTYPE html> 
-<html lang="en"> 
-  
-<head> 
-    <title>Matplotlib Plot</title> 
-</head> 
-  
-<body> 
-    <h1>Basecalling statistic</h1> 
-    <img src="{{ url_for('static', filename='images/plot.png') }}"> 
-</body> 
-  
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basecalling</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+        .section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #fff;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 80%;
+        }
+        .section img {
+            flex: 1;
+            margin-right: 20px;
+            border-radius: 8px;
+            width: 50%;
+            height: auto;
+        }
+        .section .details {
+            flex: 1;
+        }
+        .section h2 {
+            margin-top: 0;
+        }
+        .current {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Basecalling</h1>
+        </div>
+        <div class="current section">
+            <img src="{{ url_for('static', filename='images/' + current_basecalling_metrics_plot + '.jpg') }}">
+            <div class="details">
+                <h2>Current Basecalling</h2>
+                <p>Basecaller Name: {{ basecaller_name }}</p>
+                <p>Batch Size: {{ batch_size }}</p>
+                <p>Execution Time: {{ execution_time }}[s]</p>
+            </div>
+        </div>
+        <div class="content">
+            <div class="section">
+                <img src="{{ url_for('static', filename='images/plot.jpg') }}">
+                <div class="details">
+                    <h2>Best Time for SACall</h2>
+                    <p>Batch Size: {{ batch_size }}</p>
+                    <p>Execution Time: {{ best_time_sacall }}[s]</p>
+                </div>
+                <div class="details">
+                    <h2>Best Time for RODAN</h2>
+                    <p>Batch Size: {{ batch_size }}</p>
+                    <p>Execution Time: {{ best_time_rodan }}[s]</p>
+                </div>
+                <div class="details">
+                    <h2>Best Time for Chiron</h2>
+                    <p>Batch Size: {{ batch_size }}</p>
+                    <p>Execution Time: {{ best_time_chiron }}[s]</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
 </html>
