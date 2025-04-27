@@ -16,8 +16,8 @@ def run_script():
             'python3', '/jetson-basecalling/metrics/db/call_db.py',
             '--query_type', 'INSERT',
             '--container_name', 'CHIRON_STATS',
-            '--execution_stat_file', '/jetson-basecalling/SACall/execution_statistic.csv',
-            ' --jetson_metrics_file', '/jetson-basecalling/SACall/jetson_metrics.csv'
+            '--execution_stat_file', '/jetson-basecalling/Chiron/execution_statistic.csv',
+            ' --jetson_metrics_file', '/jetson-basecalling/Chiron/jetson_metrics.csv'
         ]
         
         return f'Running script with input: {input_path}, batch size: {batch_size}'
