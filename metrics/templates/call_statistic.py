@@ -1,48 +1,40 @@
-import pandas as pd
+import argparse
+import json
+import numpy as np
 import matplotlib.pyplot as plt
-import numpy as np 
 import os
+import random
 
-def render_plot(): 
-    # # Wczytanie danych z pliku CSV
-    # data = pd.read_csv('jetson_metrics.csv')
+parser = argparse.ArgumentParser(description="Statistics data to plot")
+parser.add_argument("--basecallers", type=str,
+                    required=True, help="Basecaller names")
+parser.add_argument("--data", type=str,
+                    required=True, help="Data to plot")
+parser.add_argument("--batch_size", type=str,
+                    required=True, help="Batch size")
+parser.add_argument("--file_size", type=str,
+                    required=True, help="File size")
 
-    # # Grupowanie danych po rozmiarze pliku
-    # grouped_data = data.groupby('file_size')
+args = parser.parse_args()
 
-    # # Ustawienie rozmiaru wykresu
-    # plt.figure(figsize=(12, 8))
+basecallers = json.loads(args.basecallers)
+data = json.loads(args.data)
 
-    # # Tworzenie wykresów dla każdego rozmiaru pliku
-    # for size, group in grouped_data:
-    #     # Tworzymy wykresy dla CPU, GPU i Power AVG
-    #     plt.plot(group['time'], group['cpu1'], label=f'CPU1 - {size} MB', marker='o')
-    #     plt.plot(group['time'], group['cpu2'], label=f'CPU2 - {size} MB', marker='o')
-    #     plt.plot(group['time'], group['cpu3'], label=f'CPU3 - {size} MB', marker='o')
-    #     plt.plot(group['time'], group['cpu4'], label=f'CPU4 - {size} MB', marker='o')
-    #     plt.plot(group['time'], group['gpu'], label=f'GPU - {size} MB', marker='o')
-    #     # plt.plot(group['time'], group['ram'], label=f'RAM - {size} MB', marker='o')
-    #     # plt.plot(group['time'], group['power_avg'], label=f'Power Avg - {size} MB', marker='x')
+x = np.array(basecallers)
+y = np.array(data)
 
-    # # Dodanie etykiet, tytułów i legendy
-    # plt.xlabel('Time (s)')
-    # plt.ylabel('Usage (%) / Power (W)')
-    # plt.title('CPU, GPU Usage and Power Average Grouped by File Size')
-    # plt.legend(loc='upper right', bbox_to_anchor=(1.1, 1))  # Przenosimy legendę na prawo
-    # plt.grid(True)
-    # plt.tight_layout()  # Automatyczne dostosowanie układu wykresu
+colors = ['#FF5733', '#33FF57', '#3357FF']
 
-    # # Wyświetlenie wykresu
-    # plt.show()
-    data = { 
-        'a': np.arange(50), 
-        'c': np.random.randint(0, 50, 50), 
-        'd': np.random.randn(50) 
-    } 
-    data['b'] = data['a'] + 10 * np.random.randn(50) 
-    data['d'] = np.abs(data['d']) * 100
-  
-    plt.scatter('a', 'b', c='c', s='d', data=data) 
-    plt.xlabel('X label') 
-    plt.ylabel('Y label') 
-    plt.savefig(os.path.join('static', 'images', 'plot.png'))  
+plt.figure(figsize=(10, 5))
+plt.title('Basecalling with batch size ' + args.batch_size + ' and file size ' + args.file_size + 'MB')
+plt.bar(x, y, color=colors)
+
+plt.xlabel('Basecallers')
+plt.ylabel('Execution Time [s]')
+
+# Ensure the directory exists   
+output_dir = os.path.join(os.path.dirname(__file__), 'static', 'images')
+os.makedirs(output_dir, exist_ok=True)
+
+# Save the plot as a JPEG image
+plt.savefig(os.path.join(output_dir, 'best_statistic_plot.jpg'), format='jpg')
