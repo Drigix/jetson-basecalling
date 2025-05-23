@@ -26,6 +26,7 @@ import psutil
 import csv
 from datetime import datetime
 import threading
+import subprocess
 
 read_id_list, log_probs_list, output_lengths_list, row_num_list = [], [], [], []
 encode_mutex = True
@@ -194,6 +195,12 @@ def decode_process(outpath, encode_mutex, decode_mutex, write_mutex):
     write_mutex.value = 1
     decode_mutex.value = 1
 
+def get_nvpmodel_index():
+    result = subprocess.run(['sudo', 'nvpmodel', '-q'], capture_output=True, text=True)
+    for line in result.stdout.splitlines():
+        if line.strip().isdigit():
+            return int(line.strip())
+    return None
 
 def get_size(path):
     if os.path.isdir(path):
@@ -208,7 +215,7 @@ def get_size(path):
 
 def save_execution_stats_to_csv(filepath, metrics):
     with open(filepath, mode='w', newline='') as file:
-        writer = csv.DictWriter(file, fieldnames=['file_size', 'execution_time', 'batch_size'])
+        writer = csv.DictWriter(file, fieldnames=['file_size', 'execution_time', 'batch_size', 'mode'])
         writer.writeheader() 
         for metric in metrics:
             writer.writerow(metric)
@@ -311,7 +318,7 @@ def main():
     print(f"Execution time: {execution_time:.2f} sekund")
     
     # Save execution stats to CSV
-    save_execution_stats_to_csv(execution_stats_file, [{'file_size': records_size_mb, 'execution_time': execution_time, 'batch_size': argv.batch_size}])
+    save_execution_stats_to_csv(execution_stats_file, [{'file_size': records_size_mb, 'execution_time': execution_time, 'batch_size': argv.batch_size, 'mode': get_nvpmodel_index()}])
 
     # Save collected metrics to CSV
     save_metrics_to_csv(metric_file, system_metrics)
