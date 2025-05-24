@@ -77,16 +77,19 @@
                 <div class="details">
                     <h2>Best Time for SACall</h2>
                     <p>Batch Size: {{ batch_size }}</p>
+                    <p>Jetson mode: {{ jetson_mode }}</p>
                     <p>Execution Time: {{ best_time_sacall }}[s]</p>
                 </div>
                 <div class="details">
                     <h2>Best Time for RODAN</h2>
                     <p>Batch Size: {{ batch_size }}</p>
+                    <p>Jetson mode: {{ jetson_mode }}</p>
                     <p>Execution Time: {{ best_time_rodan }}[s]</p>
                 </div>
                 <div class="details">
                     <h2>Best Time for Chiron</h2>
                     <p>Batch Size: {{ batch_size }}</p>
+                    <p>Jetson mode: {{ jetson_mode }}</p>
                     <p>Execution Time: {{ best_time_chiron }}[s]</p>
                 </div>
             </div>
@@ -95,7 +98,13 @@
             <div class="section">
                 <img src="{{ url_for('static', filename='images/avg_metrics_plot.jpg') }}">
                 <div class="details">
-                    <h2>Average mectrics usage in best execution</h2>
+                    <h2>Average mectrics usage in best execution with normal mode</h2>
+                </div>
+            </div>
+            <div class="section">
+                <img src="{{ url_for('static', filename='images/avg_metrics_low_mode_plot.jpg') }}">
+                <div class="details">
+                    <h2>Average mectrics usage in best execution with low mode</h2>
                 </div>
             </div>
         </div>
