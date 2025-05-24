@@ -29,7 +29,8 @@ def read_execution_statistics(file_path):
         return {
             "file_size": data_dict.get("file_size", 0.0),
             "execution_time": data_dict.get("execution_time", 0.0),
-            "batch_size": int(data_dict.get("batch_size", 0))
+            "batch_size": int(data_dict.get("batch_size", 0)),
+            "mode": int(data_dict.get("mode", 0))
         }
 
 def read_jetson_metrics(file_path):
