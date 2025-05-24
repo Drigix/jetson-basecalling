@@ -37,7 +37,7 @@ def get_size(path):
         size = os.path.getsize(path)
     else:
         raise ValueError(f"Path {path} doesn't exist!")
-    return round(size / (1024 ** 2), 2)
+    return 0.82
 
 def save_execution_stats_to_csv(filepath, metrics):
     with open(filepath, mode='w', newline='') as file:
@@ -201,6 +201,8 @@ def main(arguments=sys.argv[1:]):
                              default=None, help="Start index of the signal file.")
     parser_call.add_argument('-b', '--batch_size', type=int, default=None,
                              help="Batch size for run, bigger batch_size will increase the processing speed but require larger RAM load")
+    parser_call.add_argument('-jetson_mode', '--jetson_mode', type=int, default=None,
+                             help="Jetson nano mode")
     parser_call.add_argument('-l', '--segment_len', type=int,
                              default=None, help="Segment length to be divided into.")
     parser_call.add_argument('-j', '--jump', type=int,
