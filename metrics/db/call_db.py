@@ -11,10 +11,17 @@ WHERE c.batch_size = @batch_size
 ORDER BY best_time ASC
 """
 
-BEST_EXEC_TIEME_BY_FILE_SIZE_AND_BATCH_SIZE_QUERY = """
+BEST_EXEC_TIME_BY_FILE_SIZE_AND_BATCH_SIZE_QUERY = """
 SELECT *
 FROM c
 WHERE c.file_size = @file_size AND c.batch_size = @batch_size
+ORDER BY c.execution_time ASC
+"""
+
+BEST_EXEC_TIME_BY_FILE_SIZE_AND_BATCH_SIZE_AND_MODE_QUERY = """
+SELECT *
+FROM c
+WHERE c.file_size = @file_size AND c.batch_size = @batch_size AND c.mode = @mode
 ORDER BY c.execution_time ASC
 """
 
@@ -94,11 +101,24 @@ def find_best_execution_by_file_size_and_batch_size(container_name, file_size, b
         connector.connect_container(container_name)
         parameters = [{"name": "@batch_size", "value": batch_size}, {"name": "@file_size", "value": file_size}]
         
-        items = list(connector.container.query_items(query=BEST_EXEC_TIEME_BY_FILE_SIZE_AND_BATCH_SIZE_QUERY, parameters=parameters, enable_cross_partition_query=True))
+        items = list(connector.container.query_items(query=BEST_EXEC_TIME_BY_FILE_SIZE_AND_BATCH_SIZE_QUERY, parameters=parameters, enable_cross_partition_query=True))
         return items[0] if items else None
     except Exception as e:
         print(f"Error during query execution: {e}")
         return None
+    
+def find_best_execution_by_file_size_and_batch_size_and_mode(container_name, file_size, batch_size, mode):
+    try:
+        # Connect to Cosmos DB with the provided database name
+        connector = AzureCosmosConnector()
+        connector.connect_container(container_name)
+        parameters = [{"name": "@batch_size", "value": batch_size}, {"name": "@file_size", "value": file_size}, {"name": "@mode", "value": mode}]
+        
+        items = list(connector.container.query_items(query=BEST_EXEC_TIME_BY_FILE_SIZE_AND_BATCH_SIZE_AND_MODE_QUERY, parameters=parameters, enable_cross_partition_query=True))
+        return items[0] if items else None
+    except Exception as e:
+        print(f"Error during query execution: {e}")
+        return None    
     
 def main():
     parser = argparse.ArgumentParser(description="Insert data into Cosmos DB")
@@ -111,6 +131,7 @@ def main():
     
     # Parameters to find records
     parser.add_argument("--batch_size", type=int, help="Current basecalling batch size")
+    parser.add_argument("--jetson_mode", type=int, help="Current basecalling batch size")
 
     args = parser.parse_args()
 
@@ -122,6 +143,8 @@ def main():
     elif args.query_type == "FIND":
         file_size = read_execution_statistics(args.execution_stat_file).get("file_size", None)
         if args.batch_size is not None and file_size is not None:
+            if args.jetson_mode is not None:
+                return find_best_execution_by_file_size_and_batch_size_and_mode(args.container_name, file_size, args.batch_size, args.jetson_mode)
             return find_best_execution_by_file_size_and_batch_size(args.container_name, file_size, args.batch_size)
         else:
             print("batch_size is required for FIND query type.")
