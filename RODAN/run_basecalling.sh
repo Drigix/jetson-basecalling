@@ -1,7 +1,7 @@
 #!/bin/bash
 INPUT_PATH=$1
 BATCH_SIZE=$2
-JETSON_MODE=$4
+JETSON_MODE=$3
 
 echo "Input Path: $INPUT_PATH"
 echo "Batch Size: $BATCH_SIZE"
