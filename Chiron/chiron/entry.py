@@ -158,7 +158,7 @@ def evaluation(args):
     print(f"Execution time: {execution_time:.2f} sekund")
     
     # Save execution stats to CSV
-    save_execution_stats_to_csv(execution_stats_file, [{'file_size': records_size_mb, 'execution_time': execution_time, 'batch_size': args.batch_size, 'mode': get_nvpmodel_index()}])
+    save_execution_stats_to_csv(execution_stats_file, [{'file_size': records_size_mb, 'execution_time': execution_time, 'batch_size': args.batch_size, 'mode': args.jetson_mode}])
 
     # Save collected metrics to CSV
     save_metrics_to_csv(metric_file, system_metrics)

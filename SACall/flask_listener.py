@@ -3,7 +3,9 @@ import subprocess
 import json
 import matplotlib.pyplot as plt
 
-app = Flask(__name__, template_folder='../metrics/templates', static_folder='../metrics/templates/static')
+app = Flask(__name__, template_folder='../metrics/templates',
+            static_url_path='/sacall/static',
+            static_folder='../metrics/templates/static')
 
 @app.route('/sacall/', methods=['GET'])
 def run_script():
@@ -12,9 +14,10 @@ def run_script():
     input_path = request.args.get('input_path', "/jetson-basecalling/test_sample/small/")
     signal_window_length = request.args.get('signal_window_length', 128)
     batch_size = request.args.get('batch_size', 140)
+    mode = request.args.get('mode', 0)
     
     try:
-        command = ['bash', 'run_basecalling.sh', input_path, str(signal_window_length), str(batch_size)]
+        command = ['bash', 'run_basecalling.sh', input_path, str(signal_window_length), str(batch_size), str(mode)]
         subprocess.run(command, check=True)
         
         db_command = [
@@ -22,11 +25,11 @@ def run_script():
             '--query_type', 'INSERT',
             '--container_name', 'SACALL_STATS',
             '--execution_stat_file', '/jetson-basecalling/SACall/execution_statistic.csv',
-            ' --jetson_metrics_file', '/jetson-basecalling/SACall/jetson_metrics.csv'
+            '--jetson_metrics_file', '/jetson-basecalling/SACall/jetson_metrics.csv'
         ]
         subprocess.run(db_command, check=True)
         
-        return f'Running script with input: {input_path}, batch size: {batch_size}'
+        # return f'Running script with input: {input_path}, batch size: {batch_size}'
  
         generate_plot(batch_size)
         
@@ -43,102 +46,121 @@ def run_script():
 
 
 def generate_plot(batch_size):
-        global current_time, best_time_sacall, best_time_rodan, best_time_chiron
+        global file_size, current_time, best_time_sacall, best_time_rodan, best_time_chiron
         # First generete metrics for current basecalling
         db_find_command = [
-            'python', '../metrics/db/call_db.py',
+            'python3', '../metrics/db/call_db.py',
             '--query_type', 'FIND_CURRENT_EXECUTION_TIME',
-            '--execution_stat_file', './execution_statistics.csv'
+            '--execution_stat_file', '/jetson-basecalling/SACall/execution_statistic.csv'
         ]
-        current_time = subprocess.check_output(db_find_command, text=True)
+        current_time = subprocess.check_output(db_find_command, universal_newlines=True)
         
         current_basecalling_metrics_data = []
         db_find_command = [
-            'python', '../metrics/db/call_db.py',
+            'python3', '../metrics/db/call_db.py',
             '--query_type', 'FIND_CURRENT_METRICS',
-            '--jetson_metrics_file', './jetson_metrics.csv'
+            '--jetson_metrics_file', '/jetson-basecalling/SACall/jetson_metrics.csv'
         ]
-        result_metrics = subprocess.check_output(db_find_command, text=True)
+        result_metrics = subprocess.check_output(db_find_command, universal_newlines=True)
         parsed_json = json.loads(result_metrics)
         current_basecalling_metrics_data.extend(parsed_json)
         
         generate_plot_command = [
-            'python', '../metrics/templates/call_metrics.py',
+            'python3', '../metrics/templates/call_metrics.py',
             '--data', json.dumps(current_basecalling_metrics_data),
             '--plot_name', 'current_basecalling_metrics_plot.jpg'
         ]
-        subprocess.check_output(generate_plot_command, text=True)
+        subprocess.check_output(generate_plot_command, universal_newlines=True)
         
         # Second generete execution for other basecalling
         data = []
         db_find_command = [
-            'python', '../metrics/db/call_db.py',
+            'python3', '../metrics/db/call_db.py',
             '--query_type', 'FIND',
             '--container_name', 'SACALL_STATS',
-            '--execution_stat_file', './execution_statistics.csv',
+            '--execution_stat_file', '/jetson-basecalling/SACall/execution_statistic.csv',
             '--batch_size', str(batch_size)
         ]
-        result = subprocess.check_output(db_find_command, text=True)
+        result = subprocess.check_output(db_find_command, universal_newlines=True)
     
         # Assuming the script returns JSON output
         parsed_json = json.loads(result)
-        data.append(parsed_json['execution_time'])
-        best_time_sacall = parsed_json['execution_time']
-        best_sacall_metrics = parsed_json['metrics']
-
+        
+        if parsed_json:
+            data.append(parsed_json['execution_time'])
+            file_size = parsed_json['file_size']
+            best_time_sacall = parsed_json['execution_time']
+            best_sacall_metrics = parsed_json['metrics']
+        else:
+            file_size = 0
+            best_time_sacall = 0
+            best_sacall_metrics = {}
+            
         db_find_command = [
-            'python', '../metrics/db/call_db.py',
+            'python3', '../metrics/db/call_db.py',
             '--query_type', 'FIND',
             '--container_name', 'RODAN_STATS',
-            '--execution_stat_file', './execution_statistics.csv',
+            '--execution_stat_file', '/jetson-basecalling/SACall/execution_statistic.csv',
             '--batch_size', str(batch_size)
         ]
-        result = subprocess.check_output(db_find_command, text=True)
+        result = subprocess.check_output(db_find_command, universal_newlines=True)
     
         # Assuming the script returns JSON output
         parsed_json = json.loads(result)
-        data.append(parsed_json['execution_time'])
-        best_time_rodan = parsed_json['execution_time']
-        best_rodan_metrics = parsed_json['metrics']
-        
+        if parsed_json:
+            data.append(parsed_json['execution_time'])
+            file_size = parsed_json['file_size']
+            best_time_rodan = parsed_json['execution_time']
+            best_rodan_metrics = parsed_json['metrics']
+        else:
+            file_size = 0
+            best_time_rodan = 0
+            best_rodan_metrics = {}
+            
         db_find_command = [
-            'python', '../metrics/db/call_db.py',
+            'python3', '../metrics/db/call_db.py',
             '--query_type', 'FIND',
             '--container_name', 'CHIRON_STATS',
-            '--execution_stat_file', './execution_statistics.csv',
+            '--execution_stat_file', '/jetson-basecalling/SACall/execution_statistic.csv',
             '--batch_size', str(batch_size)
         ]
-        result = subprocess.check_output(db_find_command, text=True)
+        result = subprocess.check_output(db_find_command, universal_newlines=True)
         
     
         # Assuming the script returns JSON output
         parsed_json = json.loads(result)
-        data.append(parsed_json['execution_time'])
-        best_time_chiron = parsed_json['execution_time']
-        best_chiron_metrics = parsed_json['metrics']
-        
+        if parsed_json:
+            data.append(parsed_json['execution_time'])
+            file_size = parsed_json['file_size']
+            best_time_chiron = parsed_json['execution_time']
+            best_chiron_metrics = parsed_json['metrics']
+        else:
+            file_size = 0
+            best_time_chiron = 0
+            best_chiron_metrics = {}
+            
         basecallers = ['SACall', 'RODAN', 'Chiron']
         
         generate_plot_command = [
-            'python', '../metrics/templates/call_statistic.py',
+            'python3', '../metrics/templates/call_statistic.py',
             '--basecallers', json.dumps(basecallers),
             '--data', json.dumps(data),
             '--batch_size', str(batch_size),
-            '--file_size', str(parsed_json['file_size'])
+            '--file_size', str(file_size)
         ]
-        result = subprocess.check_output(generate_plot_command, text=True)
+        result = subprocess.check_output(generate_plot_command, universal_newlines=True)
         
         generate_plot_command = [
-            'python', '../metrics/templates/call_avg_metrics.py',
+            'python3', '../metrics/templates/call_avg_metrics.py',
             '--basecallers', json.dumps(basecallers),
             '--data_sacall', json.dumps(best_sacall_metrics),
             '--data_rodan', json.dumps(best_rodan_metrics),
             '--data_chiron', json.dumps(best_chiron_metrics),
             '--batch_size', str(batch_size),
-            '--file_size', str(parsed_json['file_size']),
+            '--file_size', str(file_size),
             '--plot_name', 'avg_metrics_plot.jpg'
         ]
-        result = subprocess.check_output(generate_plot_command, text=True)
+        result = subprocess.check_output(generate_plot_command, universal_newlines=True)
 
 
 def generate_metrics_plot(parsed_json):

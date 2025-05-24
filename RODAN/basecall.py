@@ -284,6 +284,7 @@ if __name__ == "__main__":
     parser.add_argument("-B", "--beamsize", default=5, type=int, help="CTC beam search size (default: 5)")
     parser.add_argument("-e", "--errors", default=False, action="store_true")
     parser.add_argument("-d", "--debug", default=False, action="store_true")
+    parser.add_argument("-m", "--jetson_mode", default=0, type=int, help="Jetson mode (0: 5W, 1: low)")
     args = parser.parse_args()
 
     try:
@@ -370,7 +371,7 @@ if __name__ == "__main__":
     print(f"Execution time: {execution_time:.2f} sekund")
     
     # Save execution stats to CSV
-    save_execution_stats_to_csv(execution_stats_file, [{'file_size': records_size_mb, 'execution_time': execution_time, 'batch_size': args.batchsize, 'mode': get_nvpmodel_index()}])
+    save_execution_stats_to_csv(execution_stats_file, [{'file_size': records_size_mb, 'execution_time': execution_time, 'batch_size': args.batchsize, 'mode': args.jetson_mode}])
 
     # Save collected metrics to CSV
     save_metrics_to_csv(metric_file, system_metrics)

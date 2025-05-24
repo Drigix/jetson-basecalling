@@ -72,7 +72,7 @@
         </div>
         <div class="content">
             <div class="section">
-                <img src="{{ url_for('static', filename='images/plot.jpg') }}">
+                <img src="{{ url_for('static', filename='images/best_statistic_plot.jpg') }}">
                 <div class="details">
                     <h2>Best Time for SACall</h2>
                     <p>Batch Size: {{ batch_size }}</p>
@@ -87,6 +87,14 @@
                     <h2>Best Time for Chiron</h2>
                     <p>Batch Size: {{ batch_size }}</p>
                     <p>Execution Time: {{ best_time_chiron }}[s]</p>
+                </div>
+            </div>
+        </div>
+        <div class="content">
+            <div class="section">
+                <img src="{{ url_for('static', filename='images/avg_metrics_plot.jpg') }}">
+                <div class="details">
+                    <h2>Average mectrics usage in best execution</h2>
                 </div>
             </div>
         </div>

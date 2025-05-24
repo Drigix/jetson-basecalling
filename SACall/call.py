@@ -255,6 +255,7 @@ def main():
     parser.add_argument('-output', required=True)
     parser.add_argument('-no_cuda', action='store_true')
     parser.add_argument('-batch_size', required=True)
+    parser.add_argument('-jetson_mode', required=True)
     argv = parser.parse_args()
 
     if not os.path.exists(argv.output):
@@ -318,7 +319,7 @@ def main():
     print(f"Execution time: {execution_time:.2f} sekund")
     
     # Save execution stats to CSV
-    save_execution_stats_to_csv(execution_stats_file, [{'file_size': records_size_mb, 'execution_time': execution_time, 'batch_size': argv.batch_size, 'mode': get_nvpmodel_index()}])
+    save_execution_stats_to_csv(execution_stats_file, [{'file_size': records_size_mb, 'execution_time': execution_time, 'batch_size': argv.batch_size, 'mode': argv.jetson_mode}])
 
     # Save collected metrics to CSV
     save_metrics_to_csv(metric_file, system_metrics)
