@@ -284,7 +284,7 @@ if __name__ == "__main__":
     parser.add_argument("-B", "--beamsize", default=5, type=int, help="CTC beam search size (default: 5)")
     parser.add_argument("-e", "--errors", default=False, action="store_true")
     parser.add_argument("-d", "--debug", default=False, action="store_true")
-    parser.add_argument("-m", "--jetson_mode", default=0, type=int, help="Jetson mode (0: 5W, 1: low)")
+    parser.add_argument("-jetson_mode", "--jetson_mode", default=0, type=int, help="Jetson mode (0: 5W, 1: low)")
     args = parser.parse_args()
 
     try:
