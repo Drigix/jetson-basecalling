@@ -1,7 +1,6 @@
 from flask import Flask, request, render_template
 import subprocess
 import json
-import matplotlib.pyplot as plt
 
 app = Flask(__name__, template_folder='../metrics/templates',
             static_url_path='/sacall/static',
@@ -31,12 +30,13 @@ def run_script():
         
         # return f'Running script with input: {input_path}, batch size: {batch_size}'
  
-        generate_plot(batch_size)
+        generate_plot(batch_size, mode)
         
         return render_template('statistic.html',
                                current_basecalling_metrics_plot='current_basecalling_metrics_plot', 
                                basecaller_name=basecaller_name, 
                                batch_size=batch_size,
+                               jetson_mode=mode,
                                execution_time=current_time,
                                best_time_sacall=best_time_sacall,
                                best_time_rodan=best_time_rodan,
@@ -45,8 +45,8 @@ def run_script():
         return f'Error: {e}', 500
 
 
-def generate_plot(batch_size):
-        global file_size, current_time, best_time_sacall, best_time_rodan, best_time_chiron
+def generate_plot(batch_size, mode):
+        global file_size, best_time_sacall, best_time_rodan, best_time_chiron, best_sacall_metrics, best_rodan_metrics, best_chiron_metrics, best_low_mode_sacall_metrics, best_low_mode_rodan_metrics, best_low_mode_chiron_metrics
         # First generete metrics for current basecalling
         db_find_command = [
             'python3', '../metrics/db/call_db.py',
@@ -74,70 +74,37 @@ def generate_plot(batch_size):
         
         # Second generete execution for other basecalling
         data = []
-        db_find_command = [
-            'python3', '../metrics/db/call_db.py',
-            '--query_type', 'FIND',
-            '--container_name', 'SACALL_STATS',
-            '--execution_stat_file', '/jetson-basecalling/SACall/execution_statistic.csv',
-            '--batch_size', str(batch_size)
-        ]
-        result = subprocess.check_output(db_find_command, universal_newlines=True)
-    
-        # Assuming the script returns JSON output
-        parsed_json = json.loads(result)
+        data_low_mode = []
         
-        if parsed_json:
-            data.append(parsed_json['execution_time'])
-            file_size = parsed_json['file_size']
-            best_time_sacall = parsed_json['execution_time']
-            best_sacall_metrics = parsed_json['metrics']
-        else:
-            file_size = 0
-            best_time_sacall = 0
-            best_sacall_metrics = {}
-            
-        db_find_command = [
-            'python3', '../metrics/db/call_db.py',
-            '--query_type', 'FIND',
-            '--container_name', 'RODAN_STATS',
-            '--execution_stat_file', '/jetson-basecalling/SACall/execution_statistic.csv',
-            '--batch_size', str(batch_size)
-        ]
-        result = subprocess.check_output(db_find_command, universal_newlines=True)
+        result = find_data_in_db('SACALL_STATS', '/jetson-basecalling/SACall/execution_statistic.csv', batch_size, 0)
     
         # Assuming the script returns JSON output
         parsed_json = json.loads(result)
-        if parsed_json:
-            data.append(parsed_json['execution_time'])
-            file_size = parsed_json['file_size']
-            best_time_rodan = parsed_json['execution_time']
-            best_rodan_metrics = parsed_json['metrics']
-        else:
-            file_size = 0
-            best_time_rodan = 0
-            best_rodan_metrics = {}
-            
-        db_find_command = [
-            'python3', '../metrics/db/call_db.py',
-            '--query_type', 'FIND',
-            '--container_name', 'CHIRON_STATS',
-            '--execution_stat_file', '/jetson-basecalling/SACall/execution_statistic.csv',
-            '--batch_size', str(batch_size)
-        ]
-        result = subprocess.check_output(db_find_command, universal_newlines=True)
+        process_parsed_json(parsed_json, data, "sacall", 0) 
         
+        result = find_data_in_db('SACALL_STATS', '/jetson-basecalling/SACall/execution_statistic.csv', batch_size, 1)
+        parsed_json = json.loads(result)
+        process_parsed_json(parsed_json, data_low_mode, "sacall", 1)
+        
+        result = find_data_in_db('RODAN_STATS', '/jetson-basecalling/SACall/execution_statistic.csv', batch_size, 0)
     
         # Assuming the script returns JSON output
         parsed_json = json.loads(result)
-        if parsed_json:
-            data.append(parsed_json['execution_time'])
-            file_size = parsed_json['file_size']
-            best_time_chiron = parsed_json['execution_time']
-            best_chiron_metrics = parsed_json['metrics']
-        else:
-            file_size = 0
-            best_time_chiron = 0
-            best_chiron_metrics = {}
+        process_parsed_json(parsed_json, data, "rodan", 0)
+        
+        result = find_data_in_db('RODAN_STATS', '/jetson-basecalling/SACall/execution_statistic.csv', batch_size, 1)
+        parsed_json = json.loads(result)
+        process_parsed_json(parsed_json, data_low_mode, "rodan", 1)
+        
+        result = find_data_in_db('CHIRON_STATS', '/jetson-basecalling/SACall/execution_statistic.csv', batch_size, 0)
+    
+        # Assuming the script returns JSON output
+        parsed_json = json.loads(result)
+        process_parsed_json(parsed_json, data, "chiron", 0)
+        
+        result = find_data_in_db('CHIRON_STATS', '/jetson-basecalling/SACall/execution_statistic.csv', batch_size, 1)
+        parsed_json = json.loads(result)
+        process_parsed_json(parsed_json, data_low_mode, "chiron", 1)
             
         basecallers = ['SACall', 'RODAN', 'Chiron']
         
@@ -145,6 +112,7 @@ def generate_plot(batch_size):
             'python3', '../metrics/templates/call_statistic.py',
             '--basecallers', json.dumps(basecallers),
             '--data', json.dumps(data),
+            '--data_low_mode', json.dumps(data_low_mode),
             '--batch_size', str(batch_size),
             '--file_size', str(file_size)
         ]
@@ -161,37 +129,134 @@ def generate_plot(batch_size):
             '--plot_name', 'avg_metrics_plot.jpg'
         ]
         result = subprocess.check_output(generate_plot_command, universal_newlines=True)
-
-
-def generate_metrics_plot(parsed_json):
-    time_data = []
-    cpu_data = []
-    ram_data = []
-    
-    for metric in parsed_json['metrics']:
-        time_data.append(metric['time'])
-        cpu_data.append(metric['cpu'])
-        ram_data.append(metric['ram'])
         
-    # Generate bar plot for CPU and RAM usage over time
-    x = time_data
+        generate_plot_command = [
+            'python3', '../metrics/templates/call_avg_metrics.py',
+            '--basecallers', json.dumps(basecallers),
+            '--data_sacall', json.dumps(best_low_mode_sacall_metrics),
+            '--data_rodan', json.dumps(best_low_mode_rodan_metrics),
+            '--data_chiron', json.dumps(best_low_mode_chiron_metrics),
+            '--batch_size', str(batch_size),
+            '--file_size', str(file_size),
+            '--plot_name', 'avg_metrics_low_mode_plot.jpg'
+        ]
+        result = subprocess.check_output(generate_plot_command, universal_newlines=True)
+
+        generate_samples_per_second_statistic(basecallers, file_size, data, data_low_mode, batch_size)
+
+def find_data_in_db(container_name, execution_stat_file, batch_size, mode):
+    db_find_command = [
+        'python3', '../metrics/db/call_db.py',
+        '--query_type', 'FIND',
+        '--container_name', container_name,
+        '--execution_stat_file', execution_stat_file,
+        '--batch_size', str(batch_size),
+        '--jetson_mode', str(mode)
+    ]
+    result = subprocess.check_output(db_find_command, universal_newlines=True)
+    return result
+
+def process_parsed_json(parsed_json, data, table_key, mode):
+    global file_size, best_time_sacall, best_time_rodan, best_time_chiron, best_sacall_metrics, best_rodan_metrics, best_chiron_metrics, best_low_mode_sacall_metrics, best_low_mode_rodan_metrics, best_low_mode_chiron_metrics
+
+    if parsed_json:
+        data.append(parsed_json['execution_time'])
+        file_size = parsed_json['file_size']
+        best_time = parsed_json['execution_time']
+        best_metrics = parsed_json['metrics']
+    else:
+        data.append(0)
+        file_size = 0
+        best_time = 0
+        best_metrics = {}
+
+    if table_key == "rodan":
+        best_time_rodan = best_time
+        if mode == 1:
+            best_low_mode_rodan_metrics = best_metrics
+        else:
+            best_rodan_metrics = best_metrics
+    elif table_key == "sacall":
+        best_time_sacall = best_time
+        if mode == 1:
+            best_low_mode_sacall_metrics = best_metrics
+        else:
+            best_sacall_metrics = best_metrics
+    elif table_key == "chiron":
+        best_time_chiron = best_time
+        if mode == 1:
+            best_low_mode_chiron_metrics = best_metrics
+        else:
+            best_chiron_metrics = best_metrics
+
+def generate_samples_per_second_statistic(basecallers, file_size, current_data, current_data_low_mode, batch_size):
+    result = prepare_samples_per_second_data(current_data, current_data_low_mode, batch_size)
+    data = {
+        "64": result["data_64"],
+        "128": result["data_128"],
+        "140": result["data_140"]
+    }
+
+    data_low_mode = {
+        "64": result["data_64_low_mode"],
+        "128": result["data_128_low_mode"],
+        "140": result["data_140_low_mode"]
+    }
+    file_size_in_bytes = file_size * 1024 * 1024
     
-    plt.figure(figsize=(10, 5))
+    generate_plot_command = [
+            'python3', '../metrics/templates/call_samples_per_second_statistic.py',
+            '--basecallers', json.dumps(basecallers),
+            '--data', json.dumps(data),
+            '--file_size', str(file_size_in_bytes),
+            '--mode', str(0),
+            '--plot_name', 'samples_per_second_plot.jpg'
+    ]
+    subprocess.check_output(generate_plot_command, universal_newlines=True)
     
-    plt.subplot(2, 1, 1)
-    plt.bar(x, cpu_data, color='blue')
-    plt.xlabel('Time')
-    plt.ylabel('CPU Usage')
-    plt.title('CPU Usage Over Time')
+    generate_plot_command = [
+            'python3', '../metrics/templates/call_samples_per_second_statistic.py',
+            '--basecallers', json.dumps(basecallers),
+            '--data', json.dumps(data_low_mode),
+            '--file_size', str(file_size_in_bytes),
+            '--mode', str(1),
+            '--plot_name', 'samples_per_second_low_mode_plot.jpg'
+    ]
+    subprocess.check_output(generate_plot_command, universal_newlines=True)
     
-    plt.subplot(2, 1, 2)
-    plt.bar(x, ram_data, color='green')
-    plt.xlabel('Time')
-    plt.ylabel('RAM Usage')
-    plt.title('RAM Usage Over Time')
+def prepare_samples_per_second_data(current_data, current_data_low_mode, batch_size):
+    data = {
+        64: {"normal": [], "low_mode": []},
+        128: {"normal": [], "low_mode": []},
+        140: {"normal": [], "low_mode": []}
+    }
     
-    plt.tight_layout()
-    plt.show()
+    data[int(batch_size)]["normal"] = current_data
+    data[int(batch_size)]["low_mode"] = current_data_low_mode
+    
+    for bs in [64, 128, 140]:
+        if bs == int(batch_size):
+            continue
+        
+        for mode in [0, 1]:
+            for table_key in ["SACALL_STATS", "RODAN_STATS", "CHIRON_STATS"]:
+                result = find_data_in_db(table_key, '/jetson-basecalling/SACall/execution_statistic.csv', bs, mode)
+                parsed_json = json.loads(result)
+                key = "normal" if mode == 0 else "low_mode"
+                if not parsed_json:
+                    execution_time = 0
+                else:
+                    execution_time = parsed_json.get('execution_time', 0)
+                data[bs][key].append(execution_time)
+    
+    return {
+        "data_64": data[64]["normal"],
+        "data_64_low_mode": data[64]["low_mode"],
+        "data_128": data[128]["normal"],
+        "data_128_low_mode": data[128]["low_mode"],
+        "data_140": data[140]["normal"],
+        "data_140_low_mode": data[140]["low_mode"]
+    }
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=6001)

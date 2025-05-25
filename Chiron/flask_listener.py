@@ -167,6 +167,7 @@ def process_parsed_json(parsed_json, data, table_key, mode):
         best_time = parsed_json['execution_time']
         best_metrics = parsed_json['metrics']
     else:
+        data.append(0)
         file_size = 0
         best_time = 0
         best_metrics = {}
@@ -210,7 +211,6 @@ def generate_samples_per_second_statistic(basecallers, file_size, current_data, 
             'python3', '../metrics/templates/call_samples_per_second_statistic.py',
             '--basecallers', json.dumps(basecallers),
             '--data', json.dumps(data),
-            '--data_low_mode', json.dumps(data_low_mode),
             '--file_size', str(file_size_in_bytes),
             '--mode', str(0),
             '--plot_name', 'samples_per_second_plot.jpg'
@@ -234,11 +234,11 @@ def prepare_samples_per_second_data(current_data, current_data_low_mode, batch_s
         140: {"normal": [], "low_mode": []}
     }
     
-    data[batch_size]["normal"] = current_data
-    data[batch_size]["low_mode"] = current_data_low_mode
+    data[int(batch_size)]["normal"] = current_data
+    data[int(batch_size)]["low_mode"] = current_data_low_mode
     
     for bs in [64, 128, 140]:
-        if bs == batch_size:
+        if bs == int(batch_size):
             continue
         
         for mode in [0, 1]:
@@ -246,7 +246,11 @@ def prepare_samples_per_second_data(current_data, current_data_low_mode, batch_s
                 result = find_data_in_db(table_key, '/jetson-basecalling/Chiron/execution_statistic.csv', bs, mode)
                 parsed_json = json.loads(result)
                 key = "normal" if mode == 0 else "low_mode"
-                data[bs][key] = parsed_json['execution_time']
+                if not parsed_json:
+                    execution_time = 0
+                else:
+                    execution_time = parsed_json.get('execution_time', 0)
+                data[bs][key].append(execution_time)
     
     return {
         "data_64": data[64]["normal"],

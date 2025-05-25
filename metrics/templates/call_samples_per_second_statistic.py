@@ -6,7 +6,7 @@ import os
 
 parser = argparse.ArgumentParser(description="Statistics data to plot")
 parser.add_argument("--basecallers", type=str, required=True, help="Basecaller names (JSON list)")
-parser.add_argument("--file_size", type=str, required=True, help="File size (integer)")
+parser.add_argument("--file_size", type=float, required=True, help="File size (integer)")
 parser.add_argument("--data", type=str, required=True, help="Data to plot (JSON dictionary)")
 parser.add_argument("--mode", type=str, required=True, help="Jetson mode (e.g., 'normal' or 'low_mode')")
 parser.add_argument("--plot_name", type=str,
@@ -16,7 +16,7 @@ args = parser.parse_args()
 try:
     basecallers = json.loads(args.basecallers)
     data = json.loads(args.data)
-    file_size = int(args.file_size)
+    file_size = args.file_size
     mode = args.mode
     plot_name = args.plot_name
 except (json.JSONDecodeError, ValueError) as e:
@@ -27,7 +27,7 @@ batch_sizes = [64, 128, 140]
 
 try:
     samples_per_second = {
-        bs: [file_size / (2 * data[bs][bc]) for bc in basecallers]
+        bs: [0 if data[str(bs)][i] == 0 else file_size / (2 * data[str(bs)][i]) for i in range(len(basecallers))]
         for bs in batch_sizes
     }
 except KeyError as e:
