@@ -33,17 +33,25 @@ parsed_data_chiron = json.loads(args.data_chiron)
 # Validate and calculate averages for each dataset
 for dataset in [parsed_data_sacall, parsed_data_rodan, parsed_data_chiron]:
     if not dataset:
+        ram_bars.append(0)
+        cpu_bars.append(0)
         continue
     if not all(isinstance(item, dict) and 'ram' in item and 'cpu' in item for item in dataset):
-        raise ValueError("Invalid data in dataset")
+        ram_bars.append(0)
+        cpu_bars.append(0)
+        continue
     rams = [item['ram'] for item in dataset if 'ram' in item]
     if rams:
         avg_ram = sum(rams) / len(rams)
         ram_bars.append(avg_ram)
+    else:
+        ram_bars.append(0)
     cpus = [item['cpu'] for item in dataset if 'cpu' in item]
     if cpus:
         avg_cpu = sum(cpus) / len(cpus)
         cpu_bars.append(avg_cpu)
+    else:
+        cpu_bars.append(0)
 
 # Bar positions
 r = np.arange(len(ram_bars))
