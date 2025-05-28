@@ -168,7 +168,8 @@ def process_parsed_json(parsed_json, data, table_key, mode):
         best_metrics = parsed_json['metrics']
     else:
         data.append(0)
-        file_size = 0
+        if file_size is None:
+            file_size = 0
         best_time = 0
         best_metrics = {}
 

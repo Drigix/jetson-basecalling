@@ -46,7 +46,7 @@ def run_script():
 
 
 def generate_plot(batch_size, mode):
-        global file_size, best_time_sacall, best_time_rodan, best_time_chiron, best_sacall_metrics, best_rodan_metrics, best_chiron_metrics, best_low_mode_sacall_metrics, best_low_mode_rodan_metrics, best_low_mode_chiron_metrics
+        global file_size, current_time, best_time_sacall, best_time_rodan, best_time_chiron, best_sacall_metrics, best_rodan_metrics, best_chiron_metrics, best_low_mode_sacall_metrics, best_low_mode_rodan_metrics, best_low_mode_chiron_metrics
         # First generete metrics for current basecalling
         db_find_command = [
             'python3', '../metrics/db/call_db.py',
@@ -166,7 +166,8 @@ def process_parsed_json(parsed_json, data, table_key, mode):
         best_metrics = parsed_json['metrics']
     else:
         data.append(0)
-        file_size = 0
+        if file_size is None:
+            file_size = 0
         best_time = 0
         best_metrics = {}
 
