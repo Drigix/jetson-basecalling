@@ -77,31 +77,31 @@ def generate_plot(batch_size, mode):
     
         # Assuming the script returns JSON output
         parsed_json = json.loads(result)
-        process_parsed_json(parsed_json, data, "sacall", 0) 
+        process_parsed_json(parsed_json, data, "sacall", mode, 0) 
         
         result = find_data_in_db('SACALL_STATS', '/jetson-basecalling/RODAN/execution_statistic.csv', batch_size, 1)
         parsed_json = json.loads(result)
-        process_parsed_json(parsed_json, data_low_mode, "sacall", 1)
+        process_parsed_json(parsed_json, data_low_mode, "sacall", mode, 1)
         
         result = find_data_in_db('RODAN_STATS', '/jetson-basecalling/RODAN/execution_statistic.csv', batch_size, 0)
     
         # Assuming the script returns JSON output
         parsed_json = json.loads(result)
-        process_parsed_json(parsed_json, data, "rodan", 0)
+        process_parsed_json(parsed_json, data, "rodan", mode, 0)
         
         result = find_data_in_db('RODAN_STATS', '/jetson-basecalling/RODAN/execution_statistic.csv', batch_size, 1)
         parsed_json = json.loads(result)
-        process_parsed_json(parsed_json, data_low_mode, "rodan", 1)
+        process_parsed_json(parsed_json, data_low_mode, "rodan", mode, 1)
         
         result = find_data_in_db('CHIRON_STATS', '/jetson-basecalling/RODAN/execution_statistic.csv', batch_size, 0)
     
         # Assuming the script returns JSON output
         parsed_json = json.loads(result)
-        process_parsed_json(parsed_json, data, "chiron", 0)
+        process_parsed_json(parsed_json, data, "chiron", mode, 0)
         
         result = find_data_in_db('CHIRON_STATS', '/jetson-basecalling/RODAN/execution_statistic.csv', batch_size, 1)
         parsed_json = json.loads(result)
-        process_parsed_json(parsed_json, data_low_mode, "chiron", 1)
+        process_parsed_json(parsed_json, data_low_mode, "chiron", mode, 1)
             
         basecallers = ['SACall', 'RODAN', 'Chiron']
         
@@ -153,7 +153,7 @@ def find_data_in_db(container_name, execution_stat_file, batch_size, mode):
     result = subprocess.check_output(db_find_command, universal_newlines=True)
     return result
 
-def process_parsed_json(parsed_json, data, table_key, mode):
+def process_parsed_json(parsed_json, data, table_key, current_mode, mode):
     global file_size, best_time_sacall, best_time_rodan, best_time_chiron, best_sacall_metrics, best_rodan_metrics, best_chiron_metrics, best_low_mode_sacall_metrics, best_low_mode_rodan_metrics, best_low_mode_chiron_metrics
 
     if parsed_json:
@@ -169,19 +169,22 @@ def process_parsed_json(parsed_json, data, table_key, mode):
         best_metrics = {}
 
     if table_key == "rodan":
-        best_time_rodan = best_time
+        if int(current_mode) == mode:
+            best_time_rodan = best_time
         if mode == 1:
             best_low_mode_rodan_metrics = best_metrics
         else:
             best_rodan_metrics = best_metrics
     elif table_key == "sacall":
-        best_time_sacall = best_time
+        if int(current_mode) == mode:
+            best_time_sacall = best_time
         if mode == 1:
             best_low_mode_sacall_metrics = best_metrics
         else:
             best_sacall_metrics = best_metrics
     elif table_key == "chiron":
-        best_time_chiron = best_time
+        if int(current_mode) == mode:
+            best_time_chiron = best_time
         if mode == 1:
             best_low_mode_chiron_metrics = best_metrics
         else:
