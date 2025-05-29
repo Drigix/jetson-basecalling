@@ -76,35 +76,35 @@ def generate_plot(batch_size, mode):
         data = []
         data_low_mode = []
         
-        result = find_data_in_db('SACALL_STATS', '/jetson-basecalling/SACall/execution_statistic.csv', batch_size, mode, 0)
+        result = find_data_in_db('SACALL_STATS', '/jetson-basecalling/SACall/execution_statistic.csv', batch_size, 0)
     
         # Assuming the script returns JSON output
         parsed_json = json.loads(result)
-        process_parsed_json(parsed_json, data, "sacall", 0) 
+        process_parsed_json(parsed_json, data, "sacall", mode, 0) 
         
-        result = find_data_in_db('SACALL_STATS', '/jetson-basecalling/SACall/execution_statistic.csv', batch_size, mode, 1)
+        result = find_data_in_db('SACALL_STATS', '/jetson-basecalling/SACall/execution_statistic.csv', batch_size, 1)
         parsed_json = json.loads(result)
-        process_parsed_json(parsed_json, data_low_mode, "sacall", 1)
-        
-        result = find_data_in_db('RODAN_STATS', '/jetson-basecalling/SACall/execution_statistic.csv', batch_size, mode, 0)
-    
+        process_parsed_json(parsed_json, data_low_mode, "sacall", mode, 1)
+
+        result = find_data_in_db('RODAN_STATS', '/jetson-basecalling/SACall/execution_statistic.csv', batch_size, 0)
+
         # Assuming the script returns JSON output
         parsed_json = json.loads(result)
-        process_parsed_json(parsed_json, data, "rodan", 0)
-        
-        result = find_data_in_db('RODAN_STATS', '/jetson-basecalling/SACall/execution_statistic.csv', batch_size, mode, 1)
+        process_parsed_json(parsed_json, data, "rodan", mode, 0)
+
+        result = find_data_in_db('RODAN_STATS', '/jetson-basecalling/SACall/execution_statistic.csv', batch_size, 1)
         parsed_json = json.loads(result)
-        process_parsed_json(parsed_json, data_low_mode, "rodan", 1)
-        
-        result = find_data_in_db('CHIRON_STATS', '/jetson-basecalling/SACall/execution_statistic.csv', batch_size, mode, 0)
-    
+        process_parsed_json(parsed_json, data_low_mode, "rodan", mode, 1)
+
+        result = find_data_in_db('CHIRON_STATS', '/jetson-basecalling/SACall/execution_statistic.csv', batch_size, 0)
+
         # Assuming the script returns JSON output
         parsed_json = json.loads(result)
-        process_parsed_json(parsed_json, data, "chiron", 0)
-        
-        result = find_data_in_db('CHIRON_STATS', '/jetson-basecalling/SACall/execution_statistic.csv', batch_size, mode, 1)
+        process_parsed_json(parsed_json, data, "chiron", mode, 0)
+
+        result = find_data_in_db('CHIRON_STATS', '/jetson-basecalling/SACall/execution_statistic.csv', batch_size, 1)
         parsed_json = json.loads(result)
-        process_parsed_json(parsed_json, data_low_mode, "chiron", 1)
+        process_parsed_json(parsed_json, data_low_mode, "chiron", mode, 1)
             
         basecallers = ['SACall', 'RODAN', 'Chiron']
         
