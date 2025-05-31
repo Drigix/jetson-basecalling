@@ -115,11 +115,48 @@ def find_best_execution_by_file_size_and_batch_size_and_mode(container_name, fil
         parameters = [{"name": "@batch_size", "value": batch_size}, {"name": "@file_size", "value": file_size}, {"name": "@mode", "value": mode}]
         
         items = list(connector.container.query_items(query=BEST_EXEC_TIME_BY_FILE_SIZE_AND_BATCH_SIZE_AND_MODE_QUERY, parameters=parameters, enable_cross_partition_query=True))
-        return items[0] if items else None
+        resultItem = items[0] if items else None
+        avg_execution_time = count_avg_execution_time(items)
+        if resultItem is not None:
+            resultItem['avg_execution_time'] = avg_execution_time
+        return resultItem
     except Exception as e:
         print(f"Error during query execution: {e}")
-        return None    
+        return None  
     
+def find_avg_execution_by_file_size_and_batch_size_and_mode(container_name, file_size, batch_size, mode):
+    try:
+        # Connect to Cosmos DB with the provided database name
+        connector = AzureCosmosConnector()
+        connector.connect_container(container_name)
+        parameters = [
+            {"name": "@batch_size", "value": batch_size},
+            {"name": "@file_size", "value": file_size},
+            {"name": "@mode", "value": mode}
+        ]
+        
+        items = list(connector.container.query_items(
+            query=BEST_EXEC_TIME_BY_FILE_SIZE_AND_BATCH_SIZE_AND_MODE_QUERY,
+            parameters=parameters,
+            enable_cross_partition_query=True
+        ))
+        
+        return count_avg_execution_time(items)
+    except Exception as e:
+        print(f"Error during query execution: {e}")
+        return None  
+
+def count_avg_execution_time(items):
+    if not items:
+        return None
+     # Extract execution_time and calculate the average
+    execution_times = [item.get("execution_time", 0) for item in items if "execution_time" in item]
+    if not execution_times:
+        return None
+        
+    avg_execution_time = sum(execution_times) / len(execution_times)
+    return avg_execution_time
+
 def main():
     parser = argparse.ArgumentParser(description="Insert data into Cosmos DB")
     parser.add_argument("--query_type", type=str, required=True, help="Type of query to execute")
@@ -152,6 +189,8 @@ def main():
         return read_execution_statistics(args.execution_stat_file).get("execution_time", None)
     elif args.query_type == "FIND_CURRENT_METRICS":
         return read_jetson_metrics(args.jetson_metrics_file)
+    elif args.query_type == "FIND_AVG_EXECUTION_TIME":
+        return find_avg_execution_by_file_size_and_batch_size_and_mode(args.container_name, file_size, args.batch_size, args.jetson_mode)
     else:
         print("Invalid query_type. Use 'INSERT' or 'FIND'.")
 
