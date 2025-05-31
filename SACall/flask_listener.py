@@ -121,7 +121,7 @@ def generate_plot(batch_size, mode):
         ]
         result = subprocess.check_output(generate_plot_command, universal_newlines=True)
         
-        generete_avg_execution(basecallers, file_size, batch_size)
+        generete_avg_execution(basecallers, file_size, batch_size, data_avg, data_avg_low_mode)
         
         generate_plot_command = [
             'python3', '../metrics/templates/call_avg_metrics.py',
@@ -302,11 +302,11 @@ def prepare_samples_per_second_data(current_data, current_data_low_mode, current
                 parsed_json = json.loads(result)
                 key = "normal" if mode == 0 else "low_mode"
                 key_avg = "normal_avg" if mode == 0 else "low_mode_avg"
-                if not parsed_json and 'execution_time' not in parsed_json:
+                if not parsed_json or 'execution_time' not in parsed_json:
                     execution_time = 0
                 else:
                     execution_time = parsed_json.get('execution_time', 0)
-                if not parsed_json and 'avg_execution_time' not in parsed_json:
+                if not parsed_json or 'avg_execution_time' not in parsed_json:
                     avg_execution_time = 0
                 else:
                     avg_execution_time = parsed_json.get('avg_execution_time', 0)
