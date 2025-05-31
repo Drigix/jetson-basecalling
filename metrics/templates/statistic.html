@@ -38,6 +38,31 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             width: 80%;
         }
+        .images-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #fff;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 80%;
+        }
+        .images {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .images img {
+            max-width: 100%;
+            height: auto;
+        }
+        .details {
+            width: 100%;
+            text-align: center;
+            margin-top: 10px;
+        }
         .section img {
             flex: 1;
             margin-right: 20px;
@@ -103,16 +128,13 @@
             </div>
         </div>
         <div class="content">
-            <div class="section">
-                <img src="{{ url_for('static', filename='images/samples_per_second_plot.jpg') }}">
+            <div class="images-section">
+                <div class="images">
+                    <img src="{{ url_for('static', filename='images/samples_per_second_plot.jpg') }}">
+                    <img src="{{ url_for('static', filename='images/samples_per_second_low_mode_plot.jpg') }}">
+                </div>
                 <div class="details">
                     <h2>Samples per second depending on batch size with jetson normal mode</h2>
-                </div>
-            </div>
-            <div class="section">
-                <img src="{{ url_for('static', filename='images/samples_per_second_low_mode_plot.jpg') }}">
-                <div class="details">
-                    <h2>Samples per second depending on batch size with jetson low mode</h2>
                 </div>
             </div>
         </div>
