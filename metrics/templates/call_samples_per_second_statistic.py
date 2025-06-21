@@ -23,7 +23,7 @@ except (json.JSONDecodeError, ValueError) as e:
     print(f"Error parsing input arguments: {e}")
     exit(1)
 
-batch_sizes = [64, 128, 140]
+batch_sizes = [16, 32, 64, 128, 140]
 
 try:
     samples_per_second = {

@@ -215,21 +215,29 @@ def generete_avg_execution(basecallers, file_size, batch_size, data_avg, data_av
 def generate_samples_per_second_statistic(basecallers, file_size, current_data, current_data_low_mode, current_avg_data, current_avg_data_low_mode, batch_size):
     result = prepare_samples_per_second_data(current_data, current_data_low_mode, current_avg_data, current_avg_data_low_mode, batch_size)
     data = {
+        "16": result["data_16"],
+        "32": result["data_32"],
         "64": result["data_64"],
         "128": result["data_128"],
         "140": result["data_140"]
     }
     data_avg = {
+        "16": result["data_16_avg"],
+        "32": result["data_32_avg"],
         "64": result["data_64_avg"],
         "128": result["data_128_avg"],
         "140": result["data_140_avg"]
     }
     data_low_mode = {
+        "16": result["data_16_low_mode"],
+        "32": result["data_32_low_mode"],
         "64": result["data_64_low_mode"],
         "128": result["data_128_low_mode"],
         "140": result["data_140_low_mode"]
     }
     data_avg_low_mode = {
+        "16": result["data_16_low_mode_avg"],
+        "32": result["data_32_low_mode_avg"],
         "64": result["data_64_low_mode_avg"],
         "128": result["data_128_low_mode_avg"],
         "140": result["data_140_low_mode_avg"]
@@ -279,6 +287,8 @@ def generate_samples_per_second_statistic(basecallers, file_size, current_data, 
     
 def prepare_samples_per_second_data(current_data, current_data_low_mode, current_avg_data, current_avg_data_low_mode, batch_size):
     data = {
+        16: {"normal": [], "normal_avg": [], "low_mode": [], "low_mode_avg": []},
+        32: {"normal": [], "normal_avg": [], "low_mode": [], "low_mode_avg": []},
         64: {"normal": [], "normal_avg": [], "low_mode": [], "low_mode_avg": []},
         128: {"normal": [], "normal_avg": [], "low_mode": [], "low_mode_avg": []},
         140: {"normal": [], "normal_avg": [], "low_mode": [], "low_mode_avg": []}
@@ -289,7 +299,7 @@ def prepare_samples_per_second_data(current_data, current_data_low_mode, current
     data[int(batch_size)]["normal_avg"] = current_avg_data
     data[int(batch_size)]["low_mode_avg"] = current_avg_data_low_mode
     
-    for bs in [64, 128, 140]:
+    for bs in [16, 32, 64, 128, 140]:
         if bs == int(batch_size):
             continue
         
@@ -311,6 +321,14 @@ def prepare_samples_per_second_data(current_data, current_data_low_mode, current
                 data[bs][key_avg].append(avg_execution_time)
     
     return {
+        "data_16": data[16]["normal"],
+        "data_16_avg": data[16]["normal_avg"],
+        "data_16_low_mode": data[16]["low_mode"],
+        "data_16_low_mode_avg": data[16]["low_mode_avg"],
+        "data_32": data[32]["normal"],
+        "data_32_avg": data[32]["normal_avg"],
+        "data_32_low_mode": data[32]["low_mode"],
+        "data_32_low_mode_avg": data[32]["low_mode_avg"],
         "data_64": data[64]["normal"],
         "data_64_avg": data[64]["normal_avg"],
         "data_64_low_mode": data[64]["low_mode"],
