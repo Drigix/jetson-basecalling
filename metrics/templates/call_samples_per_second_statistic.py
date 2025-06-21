@@ -38,12 +38,12 @@ except ZeroDivisionError:
     exit(1)
 
 x = np.arange(len(basecallers))
-width = 0.2 
+width = 0.8 / len(batch_sizes) 
 
 fig, ax = plt.subplots(figsize=(10, 6))
 
 for i, bs in enumerate(batch_sizes):
-    ax.bar(x + i * width, samples_per_second[bs], width, label=f'Batch Size {bs}')
+    ax.bar(x + i * width - (len(batch_sizes) - 1) * width / 2, samples_per_second[bs], width, label=f'Batch Size {bs}')
 
 ax.set_xlabel('Basecallers')
 ax.set_ylabel('Samples per Second')
