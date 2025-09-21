@@ -11,4 +11,5 @@ def explore_fast5(filepath):
         f.visititems(print_attrs)
 
 # Podaj ścieżkę do pliku
-explore_fast5("../Chiron/chiron/example_data/DNA_input_new_schema/read1.fast5")
+#explore_fast5("../test_sample/rodan_sample/a5e44b92-65bb-43d8-87dd-2bc3777859ee.fast5")
+explore_fast5("../test_sample/medium/5210_N128870_20180727_FAH82747_MN19691_sequencing_run_Alfred_Imp4restart5_31649_read_9834_ch_461_strand.fast5")
