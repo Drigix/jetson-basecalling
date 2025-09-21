@@ -53,7 +53,7 @@ Performing basecalling directly on low-power embedded GPUs offers:
 | `metrics/` | Evaluation outputs (accuracy, timing, quality metrics). |
 | `power_data/` | Power or energy measurement logs (e.g., INA219 / external meter results). |
 | `test_sample/` | Sample FAST5 / test input set (sanitized subset for reproducibility). |
-| `docs/` (suggested) | Place diagrams (e.g., `cluster-topology.png`) & extended docs. |
+| `docs/` (suggested) | Place diagrams (e.g., `cluster_schema.png`) & extended docs. |
 ---
 
 ## System Architecture (Conceptual)
@@ -64,7 +64,7 @@ The cluster runs one model per Jetson worker (current baseline) with services ex
 
 (Replace the embedded image path once you add the file to the repository, e.g. `docs/cluster-topology.png`.)
 
-![Jetson basecalling cluster topology](docs/cluster-topology.png)
+![Jetson basecalling cluster topology](docs/cluster_schema.png)
 
 Typical Components:
 - Orchestrator: Kubernetes / K3s (instruction -> https://github.com/Drigix/k3s-on-jetson-nano-with-gpu)
