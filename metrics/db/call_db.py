@@ -28,11 +28,13 @@ ORDER BY c.execution_time ASC
 def read_execution_statistics(file_path):
     """Reads execution statistics from CSV file (file_size, execution_time, batch_size)."""
     with open(file_path, mode="r", encoding="utf-8") as file:
+
         reader = csv.reader(file)
         headers = next(reader)
         values = next(reader)
 
         data_dict = dict(zip(headers, map(float, values))) 
+        
         return {
             "file_size": data_dict.get("file_size", 0.0),
             "execution_time": data_dict.get("execution_time", 0.0),

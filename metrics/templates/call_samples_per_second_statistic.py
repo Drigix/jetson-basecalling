@@ -11,6 +11,7 @@ parser.add_argument("--data", type=str, required=True, help="Data to plot (JSON 
 parser.add_argument("--mode", type=str, required=True, help="Jetson mode (e.g., 'normal' or 'low_mode')")
 parser.add_argument("--plot_name", type=str,
                     required=True, help="Plot name")
+parser.add_argument("--y_max", type=float, help="Maximum y-axis value (optional, for scaling)")
 args = parser.parse_args()
 
 try:
@@ -27,7 +28,7 @@ batch_sizes = [16, 32, 64, 128, 140]
 
 try:
     samples_per_second = {
-        bs: [0 if data[str(bs)][i] == 0 else file_size / (2 * data[str(bs)][i]) for i in range(len(basecallers))]
+        bs: [0 if data[str(bs)][i] == 0 else file_size / (1 * data[str(bs)][i]) for i in range(len(basecallers))]
         for bs in batch_sizes
     }
 except KeyError as e:
@@ -51,6 +52,9 @@ ax.set_title(f'Samples per Second ({mode} mode)')
 ax.set_xticks(x + width)
 ax.set_xticklabels(basecallers)
 ax.legend()
+
+if args.y_max:
+    ax.set_ylim(0, args.y_max)
 
 # Ensure the directory exists
 output_dir = os.path.join(os.path.dirname(__file__), 'static', 'images')

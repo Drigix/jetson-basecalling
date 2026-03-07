@@ -20,7 +20,7 @@ for device in devices:
                 line = line.strip()
                 if line:
                     try:
-                        value = float(line)
+                        value = 1000 * float(line)
                         data_points.append(value)
                     except ValueError:
                         continue
